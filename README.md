@@ -1,4 +1,4 @@
-# Crypto Table Training Sandbox
+# React + TypeScript Training Sandbox
 
 Песочница для тренировки React + TypeScript задач.
 
