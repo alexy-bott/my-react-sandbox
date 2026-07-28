@@ -2,6 +2,10 @@
 
 Песочница для тренировки React + TypeScript задач.
 
+## Превью
+
+![Локальный вид песочницы с React tasks](./docs/assets/sandbox-preview.png)
+
 ## Запуск
 
 ```bash
