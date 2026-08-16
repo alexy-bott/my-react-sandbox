@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local AI agent instructions and tool metadata
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+.aiignore
+.codex/
+.cursor/
+.windsurf/
