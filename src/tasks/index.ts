@@ -5,14 +5,18 @@ import {BaseFetch} from './base-fetch/active'
 import CardWildberies from './card-and-filters/active'
 import {CheckboxListTask} from './checkbox-list/active'
 import {ConditionalInputsTask} from './conditional-input-reset/active'
+import {CrossTabInputSyncTask} from './cross-tab-input-sync/active'
 import {ProductSearchTask} from './debounced-product-search/active'
+import {DynamicFormTask} from './dynamic-form/active'
 import {EffectLifecycleTask} from './effect-lifecycle/active'
+import {NestedCommentsTask} from './nested-comments/active'
 import {RandomGameBoardTask} from './random-game-board/active'
 import {ReactReviewTask} from './react-refactoring/active'
 import {StateHistoryTask} from './state-history/active'
 import {SupplierOffersFilters} from './supplier-offers-filters/active'
 import {TimerTask} from './timer/active'
 import {TodoTask} from './todo/active'
+import {UseClickOutsideTask} from './use-click-outside/active'
 import {UseFetchTask} from './use-fetch/active'
 
 export type Task = {
@@ -96,5 +100,25 @@ export const tasks: Task[] = [
     id: 'react-refactoring',
     title: 'Ревью React-компонента',
     component: ReactReviewTask,
+  },
+  {
+    id: 'nested-comments',
+    title: 'Список вложенных комментариев',
+    component: NestedCommentsTask,
+  },
+  {
+    id: 'cross-tab-input-sync',
+    title: 'Синхронизация текста между вкладками',
+    component: CrossTabInputSyncTask,
+  },
+  {
+    id: 'dynamic-form',
+    title: 'Динамическая форма',
+    component: DynamicFormTask,
+  },
+  {
+    id: 'use-click-outside',
+    title: 'Обработка клика вне элемента',
+    component: UseClickOutsideTask,
   },
 ]

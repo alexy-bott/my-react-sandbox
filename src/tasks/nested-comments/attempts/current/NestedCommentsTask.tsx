@@ -1,0 +1,48 @@
+type CommentData = {
+  id: number
+  text: string
+  children?: CommentData[]
+}
+
+type CommentsProps = {
+  comments: CommentData[]
+}
+
+const comments: CommentData[] = [
+  {id: 1, text: 'message 1'},
+  {
+    id: 2,
+    text: 'message 2',
+    children: [
+      {
+        id: 4,
+        text: 'message 4',
+        children: [
+          {id: 7, text: 'message 7'},
+          {
+            id: 8,
+            text: 'message 8',
+            children: [
+              {id: 9, text: 'message 9'},
+              {id: 10, text: 'message 10'},
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {id: 5, text: 'message 5'},
+]
+
+function Comments({comments}: CommentsProps) {
+  void comments
+  return null
+}
+
+export function NestedCommentsTask() {
+  return (
+    <div className="task-card">
+      <Comments comments={comments} />
+    </div>
+  )
+}
