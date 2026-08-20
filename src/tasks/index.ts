@@ -1,11 +1,11 @@
 import type {ComponentType} from 'react'
-import {AdaptiveOverflowMenuTask} from './adaptive-overflow-menu/AdaptiveOverflowMenuTask'
-import {BaseFetch} from './base-fetch/BaseFetch'
-import CardWildberies from './card-and-filters/CardWildberries'
-import {SupplierOffersFilters} from './supplier-offers-filters/SupplierOffersFilters'
-import {TimerTask} from './timer/TimerTask'
-import {TodoTask} from './todo/TodoTask'
-import {UseFetchTask} from './use-fetch/UseFetchTask'
+import {AdaptiveOverflowMenuTask} from './adaptive-overflow-menu/active'
+import {BaseFetch} from './base-fetch/active'
+import CardWildberies from './card-and-filters/active'
+import {SupplierOffersFilters} from './supplier-offers-filters/active'
+import {TimerTask} from './timer/active'
+import {TodoTask} from './todo/active'
+import {UseFetchTask} from './use-fetch/active'
 
 export type Task = {
   id: string
