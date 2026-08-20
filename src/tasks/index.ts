@@ -3,6 +3,13 @@ import {SandboxGuideTask} from './00-sandbox-guide/active'
 import {AdaptiveOverflowMenuTask} from './adaptive-overflow-menu/active'
 import {BaseFetch} from './base-fetch/active'
 import CardWildberies from './card-and-filters/active'
+import {CheckboxListTask} from './checkbox-list/active'
+import {ConditionalInputsTask} from './conditional-input-reset/active'
+import {ProductSearchTask} from './debounced-product-search/active'
+import {EffectLifecycleTask} from './effect-lifecycle/active'
+import {RandomGameBoardTask} from './random-game-board/active'
+import {ReactReviewTask} from './react-refactoring/active'
+import {StateHistoryTask} from './state-history/active'
 import {SupplierOffersFilters} from './supplier-offers-filters/active'
 import {TimerTask} from './timer/active'
 import {TodoTask} from './todo/active'
@@ -54,5 +61,40 @@ export const tasks: Task[] = [
     id: 'adaptive-overflow-menu',
     title: 'Адаптивное меню с dropdown',
     component: AdaptiveOverflowMenuTask,
+  },
+  {
+    id: 'effect-lifecycle',
+    title: 'Жизненный цикл вложенного компонента',
+    component: EffectLifecycleTask,
+  },
+  {
+    id: 'conditional-input-reset',
+    title: 'Состояние поля при переключении',
+    component: ConditionalInputsTask,
+  },
+  {
+    id: 'debounced-product-search',
+    title: 'Поиск товаров при вводе',
+    component: ProductSearchTask,
+  },
+  {
+    id: 'random-game-board',
+    title: 'Генератор игрового поля',
+    component: RandomGameBoardTask,
+  },
+  {
+    id: 'checkbox-list',
+    title: 'Управляемый список флажков',
+    component: CheckboxListTask,
+  },
+  {
+    id: 'state-history',
+    title: 'Состояние с историей изменений',
+    component: StateHistoryTask,
+  },
+  {
+    id: 'react-refactoring',
+    title: 'Ревью React-компонента',
+    component: ReactReviewTask,
   },
 ]

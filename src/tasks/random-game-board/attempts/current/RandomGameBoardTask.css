@@ -1,0 +1,12 @@
+.random-game-board {
+  display: grid;
+  width: min(100%, 440px);
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4px;
+  margin-top: 20px;
+}
+
+.random-game-board__cell {
+  aspect-ratio: 1;
+  border-radius: 4px;
+}
