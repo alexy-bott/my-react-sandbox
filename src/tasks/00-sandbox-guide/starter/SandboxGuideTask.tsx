@@ -13,6 +13,10 @@ export function SandboxGuideTask() {
           <p>Прочитай условие задачи.</p>
         </li>
         <li>
+          <code>hint.md</code> <span className="task-note">(необязательно)</span>
+          <p>Загляни сюда, если застрял или хочешь сравнить подход после своей попытки.</p>
+        </li>
+        <li>
           <code>attempts/current/</code>
           <p>Здесь выполняй текущее решение.</p>
         </li>
