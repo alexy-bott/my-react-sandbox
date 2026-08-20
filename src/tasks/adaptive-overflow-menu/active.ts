@@ -1,1 +1,1 @@
-export {AdaptiveOverflowMenuTask} from './starter/AdaptiveOverflowMenuTask'
+export {AdaptiveOverflowMenuTask} from './attempts/current/AdaptiveOverflowMenuTask'

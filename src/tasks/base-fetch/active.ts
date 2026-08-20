@@ -1,1 +1,1 @@
-export {BaseFetch} from './starter/BaseFetch'
+export {BaseFetch} from './attempts/current/BaseFetch'

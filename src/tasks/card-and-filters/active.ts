@@ -1,1 +1,1 @@
-export {default} from './starter/CardWildberries'
+export {default} from './attempts/current/CardWildberries'

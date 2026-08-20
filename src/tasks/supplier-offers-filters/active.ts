@@ -1,1 +1,1 @@
-export {SupplierOffersFilters} from './starter/SupplierOffersFilters'
+export {SupplierOffersFilters} from './attempts/current/SupplierOffersFilters'
