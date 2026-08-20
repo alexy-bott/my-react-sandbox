@@ -1,4 +1,5 @@
 import type {ComponentType} from 'react'
+import {SandboxGuideTask} from './00-sandbox-guide/active'
 import {AdaptiveOverflowMenuTask} from './adaptive-overflow-menu/active'
 import {BaseFetch} from './base-fetch/active'
 import CardWildberies from './card-and-filters/active'
@@ -14,6 +15,11 @@ export type Task = {
 }
 
 export const tasks: Task[] = [
+  {
+    id: '00-sandbox-guide',
+    title: 'Как работать с задачами',
+    component: SandboxGuideTask,
+  },
   {
     id: 'timer',
     title: 'Реализовать таймер',
