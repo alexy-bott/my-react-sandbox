@@ -5,7 +5,9 @@ type UserData = {
   name: string
 }
 
-declare function fetchUser(params: {id: number}): Promise<UserData>
+function fetchUser({id}: {id: number}): Promise<UserData> {
+  return Promise.resolve({id, name: `User ${id}`})
+}
 
 type Props = {
   userId: number | null
@@ -38,7 +40,7 @@ export function UserDataLoaderTask() {
 
   return (
     <div className="task-card">
-      <User userId={null} />
+      <User userId={1} />
     </div>
   )
 }
