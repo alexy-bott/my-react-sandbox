@@ -24,6 +24,11 @@ import {CountdownTimerTask} from './countdown-timer/active'
 import {UserListFilterTask} from './user-list-filter/active'
 import {TicTacToeTask} from './tic-tac-toe/active'
 import {UserListAdvancedTask} from './user-list-advanced/active'
+import {UseDebounceThrottleEffectTask} from './use-debounce-throttle-effect/active'
+import {UseToggleTask} from './use-toggle/active'
+import {UseCountdownTask} from './use-countdown/active'
+import {UseIntervalTask} from './use-interval/active'
+import {UseObjectTask} from './use-object/active'
 import {EffectLifecycleTask} from './effect-lifecycle/active'
 import {ModalTask} from './modal/active'
 import {NestedCommentsTask} from './nested-comments/active'
@@ -231,6 +236,31 @@ export const tasks: Task[] = [
     id: 'user-list-advanced',
     title: 'Расширенный список пользователей',
     component: UserListAdvancedTask,
+  },
+  {
+    id: 'use-debounce-throttle-effect',
+    title: 'Эффекты с debounce и throttle',
+    component: UseDebounceThrottleEffectTask,
+  },
+  {
+    id: 'use-toggle',
+    title: 'Булево состояние с переключением',
+    component: UseToggleTask,
+  },
+  {
+    id: 'use-countdown',
+    title: 'Управление обратным отсчётом',
+    component: UseCountdownTask,
+  },
+  {
+    id: 'use-interval',
+    title: 'Интервальный вызов callback',
+    component: UseIntervalTask,
+  },
+  {
+    id: 'use-object',
+    title: 'Состояние объекта с объединением',
+    component: UseObjectTask,
   },
   {
     id: 'use-click-outside',
