@@ -59,6 +59,7 @@ import {UseMutationObserverTask} from './use-mutation-observer/active'
 import {UsePreviousTask} from './use-previous/active'
 import {UseQueryParamsStateTask} from './use-query-params-state/active'
 import {UseStateWithResetTask} from './use-state-with-reset/active'
+// task:new imports
 
 export type TaskCategory =
   | 'components'
@@ -433,4 +434,5 @@ export const tasks: Task[] = [
     component: UseEventListenerTask,
     category: 'hooks',
   },
+  // task:new entries
 ]
