@@ -8,6 +8,22 @@ import {ConditionalInputsTask} from './conditional-input-reset/active'
 import {CrossTabInputSyncTask} from './cross-tab-input-sync/active'
 import {ProductSearchTask} from './debounced-product-search/active'
 import {DynamicFormTask} from './dynamic-form/active'
+import {HierarchicalListTask} from './hierarchical-list/active'
+import {InfiniteScrollPostsTask} from './infinite-scroll-posts/active'
+import {ContactListTask} from './contact-list/active'
+import {ControlledUncontrolledInputsTask} from './controlled-uncontrolled-inputs/active'
+import {RickMortySearchTask} from './rick-morty-search/active'
+import {ClockMetricsTask} from './clock-metrics/active'
+import {ProductListFilteringTask} from './product-list-filtering/active'
+import {UserDataLoaderTask} from './user-data-loader/active'
+import {CrushTheMoleTask} from './crush-the-mole/active'
+import {InputAutocompleteTask} from './input-autocomplete/active'
+import {UserTableCityFilterTask} from './user-table-city-filter/active'
+import {PhoneNumberInputTask} from './phone-number-input/active'
+import {CountdownTimerTask} from './countdown-timer/active'
+import {UserListFilterTask} from './user-list-filter/active'
+import {TicTacToeTask} from './tic-tac-toe/active'
+import {UserListAdvancedTask} from './user-list-advanced/active'
 import {EffectLifecycleTask} from './effect-lifecycle/active'
 import {ModalTask} from './modal/active'
 import {NestedCommentsTask} from './nested-comments/active'
@@ -135,6 +151,86 @@ export const tasks: Task[] = [
     id: 'dynamic-form',
     title: 'Динамическая форма',
     component: DynamicFormTask,
+  },
+  {
+    id: 'hierarchical-list',
+    title: 'Вложенный список из иерархии',
+    component: HierarchicalListTask,
+  },
+  {
+    id: 'infinite-scroll-posts',
+    title: 'Бесконечная загрузка постов',
+    component: InfiniteScrollPostsTask,
+  },
+  {
+    id: 'contact-list',
+    title: 'Список контактов',
+    component: ContactListTask,
+  },
+  {
+    id: 'controlled-uncontrolled-inputs',
+    title: 'Контролируемое и неконтролируемое поля',
+    component: ControlledUncontrolledInputsTask,
+  },
+  {
+    id: 'rick-morty-search',
+    title: 'Поиск персонажей Rick and Morty',
+    component: RickMortySearchTask,
+  },
+  {
+    id: 'clock-metrics',
+    title: 'Часы с метриками',
+    component: ClockMetricsTask,
+  },
+  {
+    id: 'product-list-filtering',
+    title: 'Список и фильтрация товаров',
+    component: ProductListFilteringTask,
+  },
+  {
+    id: 'user-data-loader',
+    title: 'Загрузка данных пользователя',
+    component: UserDataLoaderTask,
+  },
+  {
+    id: 'crush-the-mole',
+    title: 'Crush the mole',
+    component: CrushTheMoleTask,
+  },
+  {
+    id: 'input-autocomplete',
+    title: 'Автодополнение имён персонажей',
+    component: InputAutocompleteTask,
+  },
+  {
+    id: 'user-table-city-filter',
+    title: 'Таблица с фильтрацией по городу',
+    component: UserTableCityFilterTask,
+  },
+  {
+    id: 'phone-number-input',
+    title: 'Форматирование номера телефона',
+    component: PhoneNumberInputTask,
+  },
+  {
+    id: 'countdown-timer',
+    title: 'Таймер с обратным отсчётом',
+    component: CountdownTimerTask,
+  },
+  {
+    id: 'user-list-filter',
+    title: 'Список пользователей с фильтром',
+    component: UserListFilterTask,
+  },
+  {
+    id: 'tic-tac-toe',
+    title: 'Крестики-нолики с историей',
+    component: TicTacToeTask,
+  },
+  {
+    id: 'user-list-advanced',
+    title: 'Расширенный список пользователей',
+    component: UserListAdvancedTask,
   },
   {
     id: 'use-click-outside',
