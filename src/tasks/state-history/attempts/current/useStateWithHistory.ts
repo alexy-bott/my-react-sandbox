@@ -7,6 +7,9 @@ type StateHistoryTuple<T> = [
 ]
 
 export function useStateWithHistory<T>(initialState: T): StateHistoryTuple<T> {
-  void initialState
-  throw new Error('Реализуй useStateWithHistory')
+  const setState = (value: T) => void value
+  const goBack = () => undefined
+  const goForward = () => undefined
+
+  return [initialState, setState, goBack, goForward, [initialState]]
 }

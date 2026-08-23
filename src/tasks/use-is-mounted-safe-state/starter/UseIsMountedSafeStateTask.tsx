@@ -1,14 +1,20 @@
 import {useState} from 'react'
 import {useIsMounted, useSafeState} from './useIsMountedSafeState'
 
-function Demo() {
+type DemoProps = {
+  onMountedCheck: (isMounted: boolean) => void
+}
+
+function Demo({onMountedCheck}: DemoProps) {
   const isMounted = useIsMounted()
   const [message, setMessage] = useSafeState('Обновление не запущено')
 
   const startUpdate = () => {
     setMessage('Ожидание...')
     window.setTimeout(() => {
-      console.log(`Компонент смонтирован: ${isMounted()}`)
+      const mounted = isMounted()
+      console.log(`Компонент смонтирован: ${mounted}`)
+      onMountedCheck(mounted)
       setMessage((current) => `${current} Готово`)
     }, 1500)
   }
@@ -25,10 +31,15 @@ function Demo() {
 
 export function UseIsMountedSafeStateTask() {
   const [visible, setVisible] = useState(true)
+  const [lastMountedCheck, setLastMountedCheck] = useState<boolean | null>(null)
 
   return (
     <div className="task-card">
-      {visible && <Demo />}
+      <p>
+        Last isMounted check:{' '}
+        {lastMountedCheck === null ? '—' : String(lastMountedCheck)}
+      </p>
+      {visible && <Demo onMountedCheck={setLastMountedCheck} />}
       <button type="button" onClick={() => setVisible((value) => !value)}>
         {visible ? 'Размонтировать Demo' : 'Смонтировать Demo'}
       </button>
