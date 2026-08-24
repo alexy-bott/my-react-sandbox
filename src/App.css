@@ -59,6 +59,11 @@
   scrollbar-color: rgba(95, 102, 115, 0.38) transparent;
 }
 
+.task-list::after {
+  content: '';
+  flex: 0 0 35vh;
+}
+
 .task-list::-webkit-scrollbar {
   width: 6px;
 }
@@ -84,10 +89,19 @@
 }
 
 .task-category-title {
-  margin: 8px 8px 2px;
-  color: var(--text);
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  margin: 12px 0 4px;
+  padding: 6px 8px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-h);
+  background: color-mix(in srgb, var(--border) 35%, var(--social-bg));
   font-size: 12px;
+  font-weight: 600;
   line-height: 1.3;
+  text-align: center;
 }
 
 .task-button {
