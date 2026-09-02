@@ -59,6 +59,9 @@ import {UseMutationObserverTask} from './use-mutation-observer/active'
 import {UsePreviousTask} from './use-previous/active'
 import {UseQueryParamsStateTask} from './use-query-params-state/active'
 import {UseStateWithResetTask} from './use-state-with-reset/active'
+import {UserSearchCodeReviewTask} from './user-search-code-review/active'
+import {UseMinMatchMediaTask} from './use-min-match-media/active'
+import {UsersPageProductionReviewTask} from './users-page-production-review/active'
 // task:new imports
 
 export type TaskCategory =
@@ -433,6 +436,24 @@ export const tasks: Task[] = [
     title: 'Универсальный обработчик событий',
     component: UseEventListenerTask,
     category: 'hooks',
+  },
+  {
+    id: 'user-search-code-review',
+    title: 'Ревью компонента UserSearch',
+    component: UserSearchCodeReviewTask,
+    category: 'review',
+  },
+  {
+    id: 'use-min-match-media',
+    title: 'Реализовать хук useMinMatchMedia',
+    component: UseMinMatchMediaTask,
+    category: 'hooks',
+  },
+  {
+    id: 'users-page-production-review',
+    title: 'Production review UsersPage',
+    component: UsersPageProductionReviewTask,
+    category: 'review',
   },
   // task:new entries
 ]
