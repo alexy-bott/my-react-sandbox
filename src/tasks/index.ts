@@ -62,6 +62,7 @@ import {UseStateWithResetTask} from './use-state-with-reset/active'
 import {UserSearchCodeReviewTask} from './user-search-code-review/active'
 import {UseMinMatchMediaTask} from './use-min-match-media/active'
 import {UsersPageProductionReviewTask} from './users-page-production-review/active'
+import {MultistepRegistrationFormTask} from './multistep-registration-form/active'
 // task:new imports
 
 export type TaskCategory =
@@ -454,6 +455,12 @@ export const tasks: Task[] = [
     title: 'Production review UsersPage',
     component: UsersPageProductionReviewTask,
     category: 'review',
+  },
+  {
+    id: 'multistep-registration-form',
+    title: 'Многошаговая форма регистрации',
+    component: MultistepRegistrationFormTask,
+    category: 'components',
   },
   // task:new entries
 ]
