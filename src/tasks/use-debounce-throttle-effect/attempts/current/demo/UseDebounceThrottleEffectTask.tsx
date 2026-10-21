@@ -1,4 +1,4 @@
-// Готовый UI для проверки: студент редактирует только ../useTimedEffects.ts.
+// Подготовленный UI: в рамках упражнения редактируй только ../useTimedEffects.ts.
 import {useState} from 'react'
 import {useDebounceEffect, useThrottleEffect} from '../useTimedEffects'
 
@@ -45,6 +45,8 @@ function ThrottledLogger() {
   })
 
   useThrottleEffect(() => {
+    // performance.now() — монотонное время браузера, подходит для измерения интервалов.
+    // Этот код только показывает результат: throttle студент пишет в useTimedEffects.ts.
     const now = performance.now()
     console.log('Throttled:', value)
     setThrottledValue(value)
@@ -71,20 +73,31 @@ function ThrottledLogger() {
       <p>Throttled value: {throttledValue || '—'}</p>
       <p>Запусков эффекта: {stats.runs}</p>
       <p>
-        Последний запуск: {stats.lastAt === null ? '—' : `${Math.round(stats.lastAt)} мс от загрузки страницы`}
+        Последний запуск (performance.now):{' '}
+        {stats.lastAt === null ? '—' : `${Math.round(stats.lastAt)} мс`}
       </p>
       <p>
-        Интервал между запусками: {stats.intervalMs === null ? '—' : `${stats.intervalMs} мс`}
+        Интервал между запусками:{' '}
+        {stats.intervalMs === null ? '—' : `${stats.intervalMs} мс`}
       </p>
     </section>
   )
 }
 
 export function UseDebounceThrottleEffectTask() {
+  const [isVisible, setIsVisible] = useState(true)
+
   return (
     <div className="task-card">
-      <DebouncedSearch />
-      <ThrottledLogger />
+      <button type="button" onClick={() => setIsVisible((current) => !current)}>
+        {isVisible ? 'Размонтировать стенд' : 'Смонтировать стенд заново'}
+      </button>
+      {isVisible && (
+        <>
+          <DebouncedSearch />
+          <ThrottledLogger />
+        </>
+      )}
     </div>
   )
 }
