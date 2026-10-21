@@ -1,7 +1,8 @@
 import type {DependencyList, EffectCallback} from 'react'
 
-// Это учебный файл: реализуй оба хука здесь.
-// Демонстрационный UI в папке demo/ автоматически проверяет текущую реализацию.
+// В этом файле ты реализуешь два хука. UI для проверки находится в demo/.
+// EffectCallback — функция эффекта; она может вернуть функцию очистки (cleanup).
+// DependencyList — массив зависимостей, определяющий, когда эффект пересчитывается.
 
 export function useDebounceEffect(
   effect: EffectCallback,
@@ -9,10 +10,12 @@ export function useDebounceEffect(
   delay: number,
 ) {
   // TODO (этап 1): реализуй debounce effect.
-  // void ниже помечает параметры как использованные для TypeScript и ESLint.
-  // Он не вызывает effect и не реализует debounce.
-  // Удали эту техническую заглушку, когда напишешь реализацию.
-  void [effect, deps, delay]
+  // Временные строки void ниже лишь отмечают параметры использованными,
+  // чтобы TypeScript и ESLint не выдавали предупреждения.
+  // Они не вызывают effect и не реализуют debounce. Удали их при решении.
+  void effect
+  void deps
+  void delay
 }
 
 export function useThrottleEffect(
@@ -21,8 +24,10 @@ export function useThrottleEffect(
   delay: number,
 ) {
   // TODO (этап 2): реализуй throttle effect.
-  // void ниже помечает параметры как использованные для TypeScript и ESLint.
-  // Он не вызывает effect и не реализует throttle.
-  // Удали эту техническую заглушку, когда напишешь реализацию.
-  void [effect, deps, delay]
+  // Временные строки void ниже не выполняют эффект и не создают таймер.
+  // Они нужны только для проверки исходного файла TypeScript и ESLint.
+  // Удали их, когда начнёшь использовать параметры в своей реализации.
+  void effect
+  void deps
+  void delay
 }
