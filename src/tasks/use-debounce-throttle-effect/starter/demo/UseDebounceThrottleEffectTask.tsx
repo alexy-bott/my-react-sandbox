@@ -1,5 +1,7 @@
+// Готовый UI для проверки. Редактировать его для решения задачи не нужно.
+// Реализация студента находится в ../useTimedEffects.ts.
 import {useState} from 'react'
-import {useDebounceEffect, useThrottleEffect} from './useTimedEffects'
+import {useDebounceEffect, useThrottleEffect} from '../useTimedEffects'
 
 function DebouncedSearch() {
   const [query, setQuery] = useState('')
