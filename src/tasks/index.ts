@@ -63,6 +63,52 @@ import {UserSearchCodeReviewTask} from './user-search-code-review/active'
 import {UseMinMatchMediaTask} from './use-min-match-media/active'
 import {UsersPageProductionReviewTask} from './users-page-production-review/active'
 import {MultistepRegistrationFormTask} from './multistep-registration-form/active'
+import {TimeoutBasicsTask} from './timeout-basics/active'
+import {MockedDataListTask} from './mocked-data-list/active'
+import {MemoryGameTask} from './memory-game/active'
+import {UseStepTask} from './use-step/active'
+import {UseThrottleTask} from './use-throttle/active'
+import {ServerDateReviewTask} from './server-date-review/active'
+import {Refactor02Task} from './refactor-02-buggy-todo/active'
+import {Refactor03Task} from './refactor-03-redux-todos/active'
+import {Refactor04Task} from './refactor-04-cart-scroll/active'
+import {Refactor05Task} from './refactor-05-list-mutation/active'
+import {Refactor06Task} from './refactor-06-numbers-render/active'
+import {Refactor07Task} from './refactor-07-memo-toggle/active'
+import {Refactor08Task} from './refactor-08-window-event/active'
+import {Refactor09Task} from './refactor-09-class-event/active'
+import {Refactor10Task} from './refactor-10-lazy-init/active'
+import {Refactor11Task} from './refactor-11-reverse-list/active'
+import {Refactor12Task} from './refactor-12-counter-variable/active'
+import {Refactor13Task} from './refactor-13-create-number/active'
+import {Refactor14Task} from './refactor-14-even-child/active'
+import {Refactor15Task} from './refactor-15-click-listener/active'
+import {Refactor17Task} from './refactor-17-click-intervals/active'
+import {Refactor18Task} from './refactor-18-counter-reset/active'
+import {Refactor19Task} from './refactor-19-timed-users/active'
+import {Refactor20Task} from './refactor-20-selected-post/active'
+import {Refactor21Task} from './refactor-21-todo-search/active'
+import {Refactor22Task} from './refactor-22-context-performance/active'
+import {Refactor25Task} from './refactor-25-conditional-focus/active'
+import {Refactor26Task} from './refactor-26-products-timer/active'
+import {Refactor27Task} from './refactor-27-random-list-scroll/active'
+import {Refactor28Task} from './refactor-28-refresh-tasks/active'
+import {Refactor29Task} from './refactor-29-random-request-error/active'
+import {Refactor30Task} from './refactor-30-infinite-scroll/active'
+import {Refactor31Task} from './refactor-31-number-and-scroll/active'
+import {Refactor32Task} from './refactor-32-user-profile/active'
+import {Refactor34Task} from './refactor-34-interval-no-deps/active'
+import {Refactor35Task} from './refactor-35-count-display/active'
+import {Refactor36Task} from './refactor-36-rest-dependencies/active'
+import {Refactor37Task} from './refactor-37-heavy-send/active'
+import {Refactor39Task} from './refactor-39-timer-controls/active'
+import {Refactor40Task} from './refactor-40-car-garage/active'
+import {Refactor41Task} from './refactor-41-state-mutation/active'
+import {Refactor42Task} from './refactor-42-companies-modules/active'
+import {Refactor43Task} from './refactor-43-child-render/active'
+import {Refactor44Task} from './refactor-44-game-effects/active'
+import {Refactor45Task} from './refactor-45-disabled-submit/active'
+import {Refactor47Task} from './refactor-47-enter-todos/active'
 // task:new imports
 
 export type TaskCategory =
@@ -461,6 +507,282 @@ export const tasks: Task[] = [
     title: 'Многошаговая форма регистрации',
     component: MultistepRegistrationFormTask,
     category: 'components',
+  },
+  {
+    id: 'timeout-basics',
+    title: 'Первый отложенный вызов',
+    component: TimeoutBasicsTask,
+    category: 'other',
+  },
+  {
+    id: 'mocked-data-list',
+    title: 'Список данных через асинхронный мок',
+    component: MockedDataListTask,
+    category: 'components',
+  },
+  {
+    id: 'memory-game',
+    title: 'Memory Game — найди пары',
+    component: MemoryGameTask,
+    category: 'components',
+  },
+  {
+    id: 'use-step',
+    title: 'Управление шагами — useStep',
+    component: UseStepTask,
+    category: 'hooks',
+  },
+  {
+    id: 'use-throttle',
+    title: 'Ограничение обновлений значения — useThrottle',
+    component: UseThrottleTask,
+    category: 'hooks',
+  },
+  {
+    id: 'server-date-review',
+    title: 'Исправить приложение: дата, ширина и счётчик',
+    component: ServerDateReviewTask,
+    category: 'review',
+  },
+  {
+    id: 'refactor-02-buggy-todo',
+    title: 'Рефакторинг 02: BuggyTodo: загрузка и выполненные дела',
+    component: Refactor02Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-03-redux-todos',
+    title: 'Рефакторинг 03: React + Redux: восстановить приложение со списком дел',
+    component: Refactor03Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-04-cart-scroll',
+    title: 'Рефакторинг 04: Корзина и панель при прокрутке',
+    component: Refactor04Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-05-list-mutation',
+    title: 'Рефакторинг 05: Обновление первой строки списка',
+    component: Refactor05Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-06-numbers-render',
+    title: 'Рефакторинг 06: Счётчик и независимый список numbers',
+    component: Refactor06Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-07-memo-toggle',
+    title: 'Рефакторинг 07: Переключатель с memo-кнопкой',
+    component: Refactor07Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-08-window-event',
+    title: 'Рефакторинг 08: WindowEvent: лишние вызовы эффекта',
+    component: Refactor08Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-09-class-event',
+    title: 'Рефакторинг 09: Классовый компонент и сохранённое событие',
+    component: Refactor09Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-10-lazy-init',
+    title: 'Рефакторинг 10: Дорогое вычисление начального состояния',
+    component: Refactor10Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-11-reverse-list',
+    title: 'Рефакторинг 11: Переворот списка после выбора элемента',
+    component: Refactor11Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-12-counter-variable',
+    title: 'Рефакторинг 12: Счётчик в локальной переменной',
+    component: Refactor12Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-13-create-number',
+    title: 'Рефакторинг 13: Добавление чисел в список',
+    component: Refactor13Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-14-even-child',
+    title: 'Рефакторинг 14: Ререндер SubElement только при чётном count',
+    component: Refactor14Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-15-click-listener',
+    title: 'Рефакторинг 15: ClickListener: координата и отправка данных',
+    component: Refactor15Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-17-click-intervals',
+    title: 'Рефакторинг 17: PleaseReviewMe: список и интервалы по клику',
+    component: Refactor17Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-18-counter-reset',
+    title: 'Рефакторинг 18: Счётчик со сбросом на пяти',
+    component: Refactor18Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-19-timed-users',
+    title: 'Рефакторинг 19: Добавление пользователей за 15 секунд',
+    component: Refactor19Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-20-selected-post',
+    title: 'Рефакторинг 20: Выбор поста и данные пользователя',
+    component: Refactor20Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-21-todo-search',
+    title: 'Рефакторинг 21: Рефакторинг поиска по списку дел',
+    component: Refactor21Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-22-context-performance',
+    title: 'Рефакторинг 22: Context: часы, счётчик и Fibonacci',
+    component: Refactor22Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-25-conditional-focus',
+    title: 'Рефакторинг 25: Фокус на появившемся поле',
+    component: Refactor25Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-26-products-timer',
+    title: 'Рефакторинг 26: Товары, магазины и таймер',
+    component: Refactor26Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-27-random-list-scroll',
+    title: 'Рефакторинг 27: Асинхронный размер списка и прокрутка',
+    component: Refactor27Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-28-refresh-tasks',
+    title: 'Рефакторинг 28: Обновление списка задач клавишей r',
+    component: Refactor28Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-29-random-request-error',
+    title: 'Рефакторинг 29: Случайное число: ошибка запроса и scroll',
+    component: Refactor29Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-30-infinite-scroll',
+    title: 'Рефакторинг 30: Ревью useInfiniteScroll и его вызова',
+    component: Refactor30Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-31-number-and-scroll',
+    title: 'Рефакторинг 31: NumberAndScroll: асинхронный эффект',
+    component: Refactor31Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-32-user-profile',
+    title: 'Рефакторинг 32: Ревью UserProfile с userId',
+    component: Refactor32Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-34-interval-no-deps',
+    title: 'Рефакторинг 34: Счётчик: исправление без зависимостей эффекта',
+    component: Refactor34Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-35-count-display',
+    title: 'Рефакторинг 35: CountDisplay и значение из props',
+    component: Refactor35Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-36-rest-dependencies',
+    title: 'Рефакторинг 36: Интервал и объект rest в зависимостях',
+    component: Refactor36Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-37-heavy-send',
+    title: 'Рефакторинг 37: Ввод текста и тяжёлая кнопка отправки',
+    component: Refactor37Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-39-timer-controls',
+    title: 'Рефакторинг 39: Таймер: Start, Pause, Stop и пульсация',
+    component: Refactor39Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-40-car-garage',
+    title: 'Рефакторинг 40: Перемещение случайной машины в гараж',
+    component: Refactor40Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-41-state-mutation',
+    title: 'Рефакторинг 41: Две кнопки: счётчик и имя',
+    component: Refactor41Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-42-companies-modules',
+    title: 'Рефакторинг 42: Компании: сервис данных, store и компоненты',
+    component: Refactor42Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-43-child-render',
+    title: 'Рефакторинг 43: Child без ререндера при вводе',
+    component: Refactor43Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-44-game-effects',
+    title: 'Рефакторинг 44: Game: загрузка и fullscreenchange',
+    component: Refactor44Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-45-disabled-submit',
+    title: 'Рефакторинг 45: Кнопка submit и три поля',
+    component: Refactor45Task,
+    category: 'review',
+  },
+  {
+    id: 'refactor-47-enter-todos',
+    title: 'Рефакторинг 47: Добавление задач через Enter и кнопку',
+    component: Refactor47Task,
+    category: 'review',
   },
   // task:new entries
 ]
