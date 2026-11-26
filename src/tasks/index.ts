@@ -23,8 +23,6 @@ import {CountdownTimerTask} from './components/countdown-timer/active'
 import {TicTacToeTask} from './components/tic-tac-toe/active'
 import {UserListAdvancedTask} from './components/user-list-advanced/active'
 import {UseDebounceThrottleEffectTask} from './hooks/use-debounce-throttle-effect/active'
-import {UseCountdownTask} from './hooks/use-countdown/active'
-import {UseIntervalTask} from './hooks/use-interval/active'
 import {EffectLifecycleTask} from './review/effect-lifecycle/active'
 import {ModalTask} from './components/modal/active'
 import {NestedCommentsTask} from './components/nested-comments/active'
@@ -336,13 +334,17 @@ export const tasks: Task[] = [
   {
     id: 'use-countdown',
     title: 'Управление обратным отсчётом',
-    component: UseCountdownTask,
+    component: lazy(() =>
+      import('./hooks/use-countdown/UseCountdownTask').then(module => ({default: module.UseCountdownTask})),
+    ),
     category: 'hooks',
   },
   {
     id: 'use-interval',
     title: 'Интервальный вызов callback',
-    component: UseIntervalTask,
+    component: lazy(() =>
+      import('./hooks/use-interval/UseIntervalTask').then(module => ({default: module.UseIntervalTask})),
+    ),
     category: 'hooks',
   },
   {
