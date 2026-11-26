@@ -13,15 +13,15 @@
 
 ## Прогресс миграции
 
-После исходного снимка переведены ещё пять хуков (`use-boolean`, `use-default`, `use-first-render`, `use-state-with-reset`, `use-step`), затем четыре упражнения для состояния объектов, массивов, Map и истории (`use-object`, `use-array`, `use-map`, `state-history`), затем три упражнения с ref (`use-focus`, `use-latest`, `use-hover`), затем два упражнения с таймерами (`use-interval`, `use-countdown`).
+После исходного снимка переведены ещё пять хуков (`use-boolean`, `use-default`, `use-first-render`, `use-state-with-reset`, `use-step`), затем четыре упражнения для состояния объектов, массивов, Map и истории (`use-object`, `use-array`, `use-map`, `state-history`), затем три упражнения с ref (`use-focus`, `use-latest`, `use-hover`), затем два упражнения с таймерами (`use-interval`, `use-countdown`), затем два упражнения с viewport (`use-breakpoint`, `use-min-match-media`).
 
 | Категория | Новый формат | Всего |
 | --- | ---: | ---: |
 | Компоненты | 3 | 34 |
-| Хуки | 16 | 29 |
+| Хуки | 18 | 29 |
 | Разбор и рефакторинг | 1 | 48 |
 | JavaScript | 0 | 1 |
-| **Всего** | **20** | **112** |
+| **Всего** | **22** | **112** |
 
 Исходный снимок выше сохранён для истории; текущий прогресс не заменяет проверку каждой следующей партии.
 

@@ -32,7 +32,6 @@ import {ReactReviewTask} from './review/react-refactoring/active'
 import {SupplierOffersFilters} from './components/supplier-offers-filters/active'
 import {TimerTask} from './components/timer/active'
 import {TodoTask} from './components/todo/active'
-import {UseBreakpointTask} from './hooks/use-breakpoint/active'
 import {UseClickOutsideTask} from './hooks/use-click-outside/active'
 import {UseCombinedRefTask} from './hooks/use-combined-ref/active'
 import {UseEffectOnceTask} from './hooks/use-effect-once/active'
@@ -43,7 +42,6 @@ import {UseKeyPressTask} from './hooks/use-key-press/active'
 import {UseMutationObserverTask} from './hooks/use-mutation-observer/active'
 import {UseQueryParamsStateTask} from './hooks/use-query-params-state/active'
 import {UserSearchCodeReviewTask} from './review/user-search-code-review/active'
-import {UseMinMatchMediaTask} from './hooks/use-min-match-media/active'
 import {UsersPageProductionReviewTask} from './review/users-page-production-review/active'
 import {MultistepRegistrationFormTask} from './components/multistep-registration-form/active'
 import {TimeoutBasicsTask} from './js-basics/timeout-basics/active'
@@ -390,7 +388,9 @@ export const tasks: Task[] = [
   {
     id: 'use-breakpoint',
     title: 'Определение текущего breakpoint',
-    component: UseBreakpointTask,
+    component: lazy(() =>
+      import('./hooks/use-breakpoint/UseBreakpointTask').then(module => ({default: module.UseBreakpointTask})),
+    ),
     category: 'hooks',
   },
   {
@@ -510,7 +510,9 @@ export const tasks: Task[] = [
   {
     id: 'use-min-match-media',
     title: 'Реализовать хук useMinMatchMedia',
-    component: UseMinMatchMediaTask,
+    component: lazy(() =>
+      import('./hooks/use-min-match-media/UseMinMatchMediaTask').then(module => ({default: module.UseMinMatchMediaTask})),
+    ),
     category: 'hooks',
   },
   {
