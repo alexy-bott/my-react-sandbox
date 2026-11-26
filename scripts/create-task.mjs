@@ -1,16 +1,13 @@
-import {access, mkdir, readFile, rename, rm, writeFile} from 'node:fs/promises'
+import {mkdir, rm, writeFile} from 'node:fs/promises'
 import {dirname, join, resolve} from 'node:path'
 import {createInterface} from 'node:readline/promises'
 import {fileURLToPath} from 'node:url'
-
-const IMPORTS_ANCHOR = '// task:new imports'
-const ENTRIES_ANCHOR = '  // task:new entries'
 
 const CATEGORIES = [
   {id: 'components', title: 'Компоненты и интерфейс'},
   {id: 'hooks', title: 'Хуки'},
   {id: 'review', title: 'Разбор и рефакторинг'},
-  {id: 'other', title: 'Разное'},
+  {id: 'js-basics', title: 'JavaScript в консоли'},
 ]
 
 const TRANSLITERATION = {
@@ -52,33 +49,6 @@ const TRANSLITERATION = {
 const scriptDirectory = dirname(fileURLToPath(import.meta.url))
 const projectRoot = resolve(scriptDirectory, '..')
 const tasksRoot = join(projectRoot, 'src', 'tasks')
-const registryPath = join(tasksRoot, 'index.ts')
-
-function countOccurrences(source, value) {
-  return source.split(value).length - 1
-}
-
-function validateRegistry(registrySource) {
-  const tasksDeclaration = 'export const tasks: Task[] = ['
-  const importsAnchorIndex = registrySource.indexOf(IMPORTS_ANCHOR)
-  const tasksDeclarationIndex = registrySource.indexOf(tasksDeclaration)
-  const entriesAnchorIndex = registrySource.indexOf(ENTRIES_ANCHOR)
-  const tasksArrayClosingIndex = registrySource.indexOf('\n]', entriesAnchorIndex)
-
-  const hasExpectedStructure =
-    countOccurrences(registrySource, IMPORTS_ANCHOR) === 1 &&
-    countOccurrences(registrySource, ENTRIES_ANCHOR) === 1 &&
-    countOccurrences(registrySource, tasksDeclaration) === 1 &&
-    importsAnchorIndex < tasksDeclarationIndex &&
-    entriesAnchorIndex > tasksDeclarationIndex &&
-    tasksArrayClosingIndex > entriesAnchorIndex
-
-  if (!hasExpectedStructure) {
-    throw new Error(
-      'Не удалось обновить src/tasks/index.ts: не найдены ожидаемые task:new anchors.',
-    )
-  }
-}
 
 function createSlug(title) {
   const normalizedTitle = title
@@ -102,46 +72,6 @@ function createSlug(title) {
   )
 }
 
-function createComponentName(id) {
-  const pascalCaseName = id
-    .split('-')
-    .map((part) => part[0].toUpperCase() + part.slice(1))
-    .join('')
-  const safeName = /^[A-Za-z_$]/.test(pascalCaseName) ? pascalCaseName : `Task${pascalCaseName}`
-
-  return `${safeName}Task`
-}
-
-async function pathExists(path) {
-  try {
-    await access(path)
-    return true
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      return false
-    }
-
-    throw error
-  }
-}
-
-async function createAvailableId(title, registrySource) {
-  const baseId = createSlug(title)
-  let id = baseId
-  let suffix = 2
-
-  while (
-    (await pathExists(join(tasksRoot, id))) ||
-    registrySource.includes(`id: '${id}'`) ||
-    registrySource.includes(`id: "${id}"`)
-  ) {
-    id = `${baseId}-${suffix}`
-    suffix += 1
-  }
-
-  return id
-}
-
 async function askTitle(readline) {
   while (true) {
     const title = (await readline.question('Название задачи:\n> ')).trim()
@@ -161,10 +91,10 @@ async function askCategory(readline) {
   })
 
   while (true) {
-    const answer = (await readline.question('\nВыберите категорию [4]:\n> ')).trim()
+    const answer = (await readline.question('\nВыберите раздел [4]:\n> ')).trim()
 
     if (!answer) {
-      return 'other'
+      return 'js-basics'
     }
 
     const category = CATEGORIES[Number(answer) - 1]
@@ -177,108 +107,55 @@ async function askCategory(readline) {
   }
 }
 
-function createRegistrySource(registrySource, {id, title, componentName, category}) {
-  const newline = registrySource.includes('\r\n') ? '\r\n' : '\n'
-  const taskImport = `import {${componentName}} from './${id}/active'${newline}`
-  const taskEntry = [
-    '  {',
-    `    id: '${id}',`,
-    `    title: ${JSON.stringify(title)},`,
-    `    component: ${componentName},`,
-    `    category: '${category}',`,
-    '  },',
-    '',
-  ].join(newline)
-
-  return registrySource
-    .replace(IMPORTS_ANCHOR, `${taskImport}${IMPORTS_ANCHOR}`)
-    .replace(ENTRIES_ANCHOR, `${taskEntry}${ENTRIES_ANCHOR}`)
-}
-
-async function createTaskFiles({id, title, componentName, registrySource, category}) {
-  const taskDirectory = join(tasksRoot, id)
-  const starterDirectory = join(taskDirectory, 'starter')
-  const attemptsDirectory = join(taskDirectory, 'attempts')
-  const currentDirectory = join(attemptsDirectory, 'current')
-  const temporaryRegistryPath = `${registryPath}.task-new-${process.pid}.tmp`
-  const componentFileName = `${componentName}.tsx`
-  const taskSource = `# ${title}\n\n## Задание\n\nОпиши условие задачи здесь.\n`
-  const attemptsReadmeSource = [
-    '# Попытки',
-    '',
-    '- `current/` — здесь ты работаешь сейчас.',
-    '- `YYYY-MM-DD/` — сюда можно сохранить готовое прохождение.',
-    '- `../starter/` — отсюда можно восстановить чистый `current`.',
-    '',
-  ].join('\n')
-  const componentSource = [
-    `export function ${componentName}() {`,
-    '  return (',
-    '    <div className="task-card">',
-    '      <p className="task-note">Добавь решение задачи.</p>',
-    '    </div>',
-    '  )',
-    '}',
-    '',
-  ].join('\n')
-  const activeSource = `export {${componentName}} from './attempts/current/${componentName}'\n`
-  const updatedRegistrySource = createRegistrySource(registrySource, {
-    id,
-    title,
-    componentName,
-    category,
-  })
-
-  let taskDirectoryCreated = false
-
-  try {
-    await mkdir(taskDirectory)
-    taskDirectoryCreated = true
-    await Promise.all([mkdir(starterDirectory), mkdir(currentDirectory, {recursive: true})])
-    await Promise.all([
-      writeFile(join(taskDirectory, 'task.md'), taskSource, 'utf8'),
-      writeFile(join(taskDirectory, 'active.ts'), activeSource, 'utf8'),
-      writeFile(join(attemptsDirectory, 'README.md'), attemptsReadmeSource, 'utf8'),
-      writeFile(join(starterDirectory, componentFileName), componentSource, 'utf8'),
-      writeFile(join(currentDirectory, componentFileName), componentSource, 'utf8'),
-    ])
-    await writeFile(temporaryRegistryPath, updatedRegistrySource, 'utf8')
-    await rename(temporaryRegistryPath, registryPath)
-  } catch (error) {
-    if (taskDirectoryCreated) {
-      await rm(taskDirectory, {recursive: true, force: true})
+async function askFileName(readline) {
+  while (true) {
+    const name = (await readline.question('Имя рабочего файла (например, timer.js или useToggle.ts):\n> ')).trim()
+    if (/^[\p{L}\p{N}_-][\p{L}\p{N}_.-]*\.[a-z0-9]+$/iu.test(name) &&
+        !/^(con|prn|aux|nul|com[1-9]|lpt[1-9])\./i.test(name)) {
+      return name
     }
-
-    await rm(temporaryRegistryPath, {force: true})
-    throw error
+    console.log('Введи имя с расширением без пути к папке.')
   }
 }
 
 async function main() {
-  const registrySource = await readFile(registryPath, 'utf8')
-  validateRegistry(registrySource)
-
   const readline = createInterface({input: process.stdin, output: process.stdout})
-
-  console.log('Создание новой задачи\n')
-
   let title
   let category
-
+  let fileName
   try {
     title = await askTitle(readline)
-    console.log()
     category = await askCategory(readline)
+    fileName = await askFileName(readline)
   } finally {
     readline.close()
   }
 
-  const id = await createAvailableId(title, registrySource)
-  const componentName = createComponentName(id)
-
-  await createTaskFiles({id, title, componentName, registrySource, category})
-
-  console.log(`\nЗадача создана:\nsrc/tasks/${id}/\n\nОткрой task.md и добавь условие.`)
+  const slug = createSlug(title)
+  let id = slug
+  let suffix = 2
+  const groupDirectory = join(tasksRoot, category)
+  while (true) {
+    try {
+      await mkdir(join(groupDirectory, id))
+      break
+    } catch (error) {
+      if (error.code !== 'EEXIST') throw error
+      id = `${slug}-${suffix++}`
+    }
+  }
+  const directory = join(groupDirectory, id)
+  try {
+    await mkdir(join(directory, 'starter'))
+    await mkdir(join(directory, 'attempts/current'), {recursive: true})
+    await writeFile(join(directory, 'task.md'), `# ${title}\n\n[Рабочий файл](./attempts/current/${fileName})\n`)
+    await writeFile(join(directory, 'starter', fileName), '')
+    await writeFile(join(directory, 'attempts/current', fileName), '')
+  } catch (error) {
+    await rm(directory, {recursive: true, force: true})
+    throw error
+  }
+  console.log(`Создана заготовка: src/tasks/${category}/${id}/task.md`)
 }
 
 main().catch((error) => {

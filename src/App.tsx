@@ -9,7 +9,7 @@ const TASK_CATEGORIES: {id: TaskCategory; title: string}[] = [
   {id: 'components', title: 'Компоненты и интерфейс'},
   {id: 'hooks', title: 'Хуки'},
   {id: 'review', title: 'Разбор и рефакторинг'},
-  {id: 'other', title: 'Разное'},
+  {id: 'js-basics', title: 'JavaScript в консоли'},
 ]
 
 function App() {
@@ -41,7 +41,7 @@ function App() {
   const visibleTaskGroups = TASK_CATEGORIES.map((category) => ({
     ...category,
     tasks: visibleTasks.filter(
-      (task) => task.id !== GUIDE_TASK_ID && (task.category ?? 'other') === category.id,
+      (task) => task.id !== GUIDE_TASK_ID && task.category === category.id,
     ),
   })).filter((category) => category.tasks.length > 0)
 
@@ -101,10 +101,20 @@ function App() {
         <header className="task-header">
           <span>Активное задание</span>
           <h2>{activeTask.title}</h2>
+          <code>src/tasks/{activeTask.category && `${activeTask.category}/`}{activeTask.id}/task.md</code>
         </header>
 
         <div className="task-content">
-          <ActiveTaskComponent />
+          {activeTask.command ? (
+            <>
+              <p>Запусти из корня проекта в терминале:</p>
+              <code>{activeTask.command}</code>
+              {ActiveTaskComponent && <details>
+                <summary>Следующий шаг с проверкой в браузере</summary>
+                <ActiveTaskComponent />
+              </details>}
+            </>
+          ) : ActiveTaskComponent && <ActiveTaskComponent />}
         </div>
       </section>
     </main>
