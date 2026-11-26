@@ -79,13 +79,12 @@ jobs:
           const otherText='Здесь будет UI задания с загрузкой данных.'
           const wait=async(check,label,page,advance=false)=>{
            const deadline=Date.now()+15000
-           let lastError
            while(Date.now()<deadline){
-            try{if(await check())return}catch(error){lastError=error}
+            if(await check())return
             if(advance)await page.clock.runFor(16)
             await sleep(25)
            }
-           throw new Error('Timed out: '+label+(lastError?' '+lastError.message:''))
+           throw new Error('Timed out: '+label)
           }
           const open=async()=>{
            const page=await browser.newPage()
@@ -109,7 +108,17 @@ jobs:
             }
             window.clearInterval=id=>{timers.delete(id);return clear(id)}
            })
-           const intervals=()=>page.evaluate(()=>[...window.__sandboxIntervals.entries()])
+           // No file writes or document navigation while a clock-controlled scenario runs.
+           // Fail explicitly on an unexpected reload instead of losing the tracking map silently.
+           let reloaded=false
+           page.on('framenavigated',frame=>{if(frame===page.mainFrame())reloaded=true})
+           const intervals=async()=>{
+            assert.equal(reloaded,false,'Unexpected document navigation during controlled clock scenario')
+            return page.evaluate(()=>{
+             if(!(window.__sandboxIntervals instanceof Map))throw new Error('Timer instrumentation missing in current document')
+             return [...window.__sandboxIntervals.entries()]
+            })
+           }
            const waitTimers=delays=>wait(async()=>JSON.stringify((await intervals()).map(x=>x[1]).sort())===JSON.stringify([...delays].sort()),'active intervals '+delays,page)
            const show=(locator,advance=false)=>wait(async()=>await locator.count()>0,'visible '+locator.toString(),page,advance)
            const select=async name=>{
@@ -125,9 +134,15 @@ jobs:
            const readCount=async prefix=>Number((await content.getByText(new RegExp('^'+prefix+': [0-9]+$')).textContent({timeout:1000})).split(': ')[1])
            const waitCount=(prefix,value,advance=false)=>show(content.getByText(prefix+': '+value,{exact:true}),advance)
            const tick=async(prefix,ms,value,delays)=>{
+            const previous=await intervals()
             await page.clock.runFor(ms)
             await waitCount(prefix,value)
             await waitTimers(delays)
+            // This temporary countdown implementation renews its interval on count changes.
+            // Wait for its effect cleanup/setup before advancing the next tick.
+            if(prefix==='Countdown'&&delays.length){
+             await wait(async()=>{const active=await intervals();return active.length===1&&active[0][0]!==previous[0]?.[0]},'countdown effect settled',page)
+            }
            }
            const stable=async(prefix,value,ms)=>{
             await page.clock.runFor(ms)
@@ -149,11 +164,20 @@ jobs:
             const imports=hook==='useInterval'?'useEffect,useLayoutEffect,useRef':'useEffect,useState'
             const source='import {'+imports+'} from "react"\n'+old.replace(/  \/\/ Замени обе строки реализацией\.\n  void [^\n]+\n  throw new Error\('[^']+'\)/,'  '+solutions[hook])
             assert.ok(!source.includes("throw new Error('Реализуй"))
+            // Keep HMR recovery as a separate real-time smoke test. It may reload the document.
+            const smoke=await browser.newPage()
+            await smoke.goto('http://127.0.0.1:5173')
+            await smoke.getByRole('navigation',{name:'Список заданий'}).getByRole('button',{name:title,exact:true}).click()
+            await smoke.locator('.task-content').getByText('Реализуй '+hook,{exact:true}).waitFor()
+            await writeFile(file,source)
+            await smoke.locator('.task-content').getByText(hook==='useInterval'?/^Count: \d+$/:/^Countdown: \d+$/).waitFor({timeout:15000})
+            await smoke.close()
+            log(id+' starter to solution recovery (real-time smoke)')
+            compile(file)
+            // Load the already-written solution in a fresh page; install Clock and instrumentation
+            // before mounting the timer task. Never reuse the HMR document.
             let t=await open()
             await t.select(title)
-            await t.show(t.content.getByText('Реализуй '+hook,{exact:true}),true)
-            await writeFile(file,source)
-            compile(file)
             if(hook==='useInterval'){
              await t.show(t.content.getByText(/^Count: \d+$/),true)
              await t.waitTimers([1000])
@@ -236,7 +260,7 @@ jobs:
              }
              log('use-countdown pause/resume, reset, each tick in both directions, terminal start and unmount cleanup')
             }
-            await t.page.close()
+            if(!t.page.isClosed())await t.page.close()
             await writeFile(file,old)
             t=await open()
             await t.select(title)
