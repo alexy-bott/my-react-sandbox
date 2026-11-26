@@ -1,0 +1,44 @@
+name: Sandbox pilot verification
+
+on:
+  push:
+    branches: [codex/sandbox-pilot-verification]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install locked dependencies
+        run: |
+          npm install --global pnpm@10.26.0
+          pnpm install --frozen-lockfile
+      - name: Baseline build
+        continue-on-error: true
+        run: |
+          git checkout --detach a9febfd8100e48f65d20f00cc062520c0d81f657
+          pnpm build
+      - name: Baseline lint
+        continue-on-error: true
+        run: pnpm lint
+      - name: Switch to exact pilot commit
+        run: git checkout --detach 0d8973dc5b18fa53c7a256881d44c60c8bf4790f
+      - name: Pilot build
+        run: pnpm build
+      - name: Lint changed TypeScript files
+        if: always()
+        run: pnpm exec eslint src/App.tsx src/tasks/index.ts src/sandbox/TaskRunner.tsx src/sandbox/TaskErrorBoundary.tsx src/tasks/hooks/use-toggle/UseToggleTask.tsx src/tasks/hooks/use-toggle/starter/UseToggleTask.tsx
+      - name: Pilot full lint
+        if: always()
+        continue-on-error: true
+        run: pnpm lint
