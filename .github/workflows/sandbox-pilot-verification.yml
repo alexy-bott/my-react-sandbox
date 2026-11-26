@@ -1,4 +1,4 @@
-name: Sandbox collection hook migration verification
+name: Sandbox ref hook migration verification
 on:
   push:
     branches: [codex/sandbox-pilot-verification]
@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 54aa06f6a265741259d5c7dd241874f3e4393fea
+          ref: d0e9ac3f902d9939db5b95ec0b7b33c2e8908a11
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@v4
@@ -24,14 +24,14 @@ jobs:
       - name: Build
         run: pnpm build
       - name: Lint migrated hooks and registry
-        run: pnpm exec eslint src/tasks/index.ts src/tasks/hooks/use-object src/tasks/hooks/use-array src/tasks/hooks/use-map src/tasks/hooks/state-history
+        run: pnpm exec eslint src/tasks/index.ts src/tasks/hooks/use-focus src/tasks/hooks/use-latest src/tasks/hooks/use-hover
       - name: Check source fidelity and local links
         run: |
           python - <<'PY'
           from pathlib import Path
           import re, subprocess
-          base='59bef689650fa65d5ba79ad68e7975f4acfb4106'
-          cases=[('use-object','UseObjectTask'),('use-array','UseArrayTask'),('use-map','UseMapTask'),('state-history','StateHistoryTask')]
+          base='54aa06f6a265741259d5c7dd241874f3e4393fea'
+          cases=[('use-focus','UseFocusTask'),('use-latest','UseLatestTask'),('use-hover','UseHoverTask')]
           for name,comp in cases:
               root=Path('src/tasks/hooks')/name
               file=root/(comp+'.tsx')
@@ -54,47 +54,30 @@ jobs:
           for i in $(seq 1 30); do curl -fsS http://127.0.0.1:5173/ >/dev/null && break; sleep 1; done
           cat > /tmp/browser-check.mjs <<'JS'
           import assert from 'node:assert/strict'
-          import {readFile, writeFile} from 'node:fs/promises'
+          import {readFile,writeFile} from 'node:fs/promises'
           import {execFileSync} from 'node:child_process'
           import {chromium} from '/tmp/sandbox-browser/node_modules/playwright/index.mjs'
           
           const cases=[
-            ['use-object','UseObjectTask','useObject','Состояние объекта с объединением'],
-            ['use-array','UseArrayTask','useArray','Управление состоянием массива'],
-            ['use-map','UseMapTask','useMap','Управление состоянием Map'],
-            ['state-history','StateHistoryTask','useStateWithHistory','Состояние с историей изменений']
+           ['use-focus','UseFocusTask','useFocus','Программная установка фокуса'],
+           ['use-latest','UseLatestTask','useLatest','Ref с актуальным значением'],
+           ['use-hover','UseHoverTask','useHover','Отслеживание наведения']
           ]
           const solutions={
-            useObject:"const [value,setValue]=useState(initialValue); return [value,update=>setValue(prev=>({...prev,...(typeof update==='function'?update(prev):update)}))]",
-            useArray:"const [value,setValue]=useState(initialValue); return {value,push:item=>setValue(prev=>[...prev,item]),removeByIndex:index=>setValue(prev=>prev.filter((_,i)=>i!==index))}",
-            useMap:"const [map,setMap]=useState(()=>new Map(defaultValue)); return {map,set:(key,value)=>setMap(prev=>new Map(prev).set(key,value)),setAll:entries=>setMap(new Map(entries)),remove:key=>setMap(prev=>{const next=new Map(prev);next.delete(key);return next}),reset:()=>setMap(new Map())}",
-            useStateWithHistory:"const [snapshot,setSnapshot]=useState({values:[initialState],index:0}); return [snapshot.values[snapshot.index],value=>setSnapshot(prev=>({values:[...prev.values.slice(0,prev.index+1),value],index:prev.index+1})),()=>setSnapshot(prev=>({...prev,index:Math.max(0,prev.index-1)})),()=>setSnapshot(prev=>({...prev,index:Math.min(prev.values.length-1,prev.index+1)})),snapshot.values]"
+           useFocus:"const ref=useRef<T>(null); const focus=useCallback(()=>ref.current?.focus(),[]); return [ref,focus]",
+           useLatest:"const ref=useRef(value); useLayoutEffect(()=>{ref.current=value},[value]); return ref",
+           useHover:"const [hovered,setHovered]=useState(false); const ref=useCallback((node:T|null)=>{if(!node)return; const enter=()=>setHovered(true);const leave=()=>setHovered(false);node.addEventListener('mouseenter',enter);node.addEventListener('mouseleave',leave);return ()=>{node.removeEventListener('mouseenter',enter);node.removeEventListener('mouseleave',leave);setHovered(false)}},[]);return [ref,hovered]"
           }
-          const typeChecks=String.raw`
-          function useObjectContractChecks() {
-            const [empty, setEmpty] = useObject()
-            setEmpty({arbitrary: 1})
-            // @ts-expect-error an unknown value is not a string
-            const text: string = empty.name
-            void text
-            const [value, setValue] = useObject({name:'valid'})
-            const name: string = value.name
-            void name
-            setValue({name:'next'})
-            // @ts-expect-error required initial object must be passed
-            useObject<{name:string}>()
-            // @ts-expect-error missing required property
-            useObject<{name:string}>({})
-            // @ts-expect-error incorrect update type
-            setValue({name:123})
-            // @ts-expect-error explicit undefined is invalid in strict exact-optional mode
-            setValue({name:undefined})
+          const imports={useFocus:"useRef,useCallback,useState",useLatest:"useRef,useLayoutEffect",useHover:"useState,useCallback"}
+          const compile=file=>{
+           execFileSync('pnpm',['exec','tsc','--ignoreConfig','--strict','--exactOptionalPropertyTypes','--noEmit','--skipLibCheck','--target','es2023','--module','esnext','--moduleResolution','bundler','--jsx','react-jsx',file],{stdio:'inherit'})
+           execFileSync('pnpm',['exec','tsc','-b','--force'],{stdio:'inherit'})
+           execFileSync('pnpm',['exec','eslint',file],{stdio:'inherit'})
           }
-          void useObjectContractChecks
-          `
-          const compile=file=>execFileSync('pnpm',['exec','tsc','--ignoreConfig','--strict','--exactOptionalPropertyTypes','--noEmit','--skipLibCheck','--target','es2023','--module','esnext','--moduleResolution','bundler','--jsx','react-jsx',file],{stdio:'inherit'})
           const browser=await chromium.launch({headless:true})
           const page=await browser.newPage()
+          const errors=[]
+          page.on('pageerror',error=>errors.push(error.message))
           const content=page.locator('.task-content')
           const nav=page.getByRole('navigation',{name:'Список заданий'})
           const originals=new Map()
@@ -102,118 +85,91 @@ jobs:
           const select=async name=>nav.getByRole('button',{name,exact:true}).click()
           const click=async name=>content.getByRole('button',{name,exact:true}).click()
           const log=name=>console.log('BROWSER RESULT '+name+' PASS')
-          const waitPre=async (expected)=> {
-            await page.waitForFunction(expected=>JSON.stringify(JSON.parse(document.querySelector('.task-content pre').textContent))===JSON.stringify(expected),expected)
-          }
-          const waitList=async expected=>page.waitForFunction(expected=>JSON.stringify([...document.querySelectorAll('.task-content li')].map(li=>Number(li.firstChild.textContent.trim())))===JSON.stringify(expected),expected)
-          const mapText=async (expected)=>page.waitForFunction(expected=>{const text=document.querySelector('.task-content pre')?.textContent??'';return expected.every(s=>text.includes(s))},expected)
-          try {
-            await page.goto('http://127.0.0.1:5173')
-            await show(nav)
-            for(const [id,comp,hook,title] of cases){
-              await select(title)
-              const message=content.getByText('Реализуй '+hook,{exact:true})
-              await show(message)
-              const file='src/tasks/hooks/'+id+'/'+comp+'.tsx'
-              const old=await readFile(file,'utf8')
-              originals.set(file,old)
-              let solution='import {useState} from "react"\n'+old.replace("throw new Error('Реализуй "+hook+"')",solutions[hook])
-              assert.notEqual(solution,old)
-              if(hook==='useObject'){
-                solution=solution.replace('return (\n    <div className="task-card">','const [empty] = useObject()\n  return (\n    <div className="task-card">\n      <output data-testid="empty">{JSON.stringify(empty)}</output>')+typeChecks
-              }
-              await writeFile(file,solution)
-              compile(file)
-              if (hook==='useObject') {
-                const projectChecks=typeChecks.replace('// @ts-expect-error explicit undefined is invalid in strict exact-optional mode','// Project config permits this; the task explicitly excludes this update.')
-                solution=solution.slice(0,-typeChecks.length)
-                await writeFile(file,solution+projectChecks)
-                execFileSync('pnpm',['exec','tsc','-b','--force'],{stdio:'inherit'})
-                await writeFile(file,solution)
-              } else {
-                execFileSync('pnpm',['exec','tsc','-b','--force'],{stdio:'inherit'})
-              }
-              execFileSync('pnpm',['exec','eslint',file],{stdio:'inherit'})
-              console.log('PROJECT TSC AND SOLUTION ESLINT '+id+' PASS')
-              if(hook==='useObject'){
-                await waitPre({a:1,b:2})
-                assert.equal(await content.getByTestId('empty').textContent(),'{}')
-                await click('Increase a')
-                await waitPre({a:2,b:2})
-                await click('Increase b')
-                await waitPre({a:2,b:3})
-                await click('Add c')
-                await waitPre({a:2,b:3,c:3})
-              } else if(hook==='useArray'){
-                await waitList([1,2,3])
-                await click('Добавить')
-                await waitList([1,2,3,4])
-                await content.getByRole('button',{name:'Удалить',exact:true}).nth(1).click()
-                await waitList([1,3,4])
-                await click('Добавить')
-                await waitList([1,3,4,4])
-                await content.getByRole('button',{name:'Удалить',exact:true}).first().click()
-                await waitList([3,4,4])
-                await content.getByRole('button',{name:'Удалить',exact:true}).last().click()
-                await waitList([3,4])
-                await content.getByRole('button',{name:'Удалить',exact:true}).first().click()
-                await waitList([4])
-                await content.getByRole('button',{name:'Удалить',exact:true}).first().click()
-                await waitList([])
-                await click('Добавить')
-                await waitList([1])
-              } else if(hook==='useMap'){
-                await mapText(['key: 🆕'])
-                await click('Add')
-                await mapText(['key: 🆕','📦'])
-                await click('Set new data')
-                await mapText(['hello: 👋','data: 📦'])
-                const text=await content.locator('pre').textContent()
-                assert.ok(!text.includes('key: 🆕'))
-                assert.equal((text.match(/:/g)||[]).length,2)
-                await click('Remove "hello"')
-                await mapText(['data: 📦'])
-                assert.ok(!(await content.locator('pre').textContent()).includes('hello:'))
-                assert.ok(await content.getByRole('button',{name:'Remove "hello"'}).isDisabled())
-                await click('Reset')
-                await page.waitForFunction(()=>!document.querySelector('.task-content pre').textContent.includes(':'))
-                const mapSolution=solution.replace("useMap<string, string>([['key', '🆕']])","useMap<string, string>(new Map([['key', '🆕']]))").replace("set(String(Date.now()), '📦')","set('key', 'updated')").replace(/setAll\(\[\s*\['hello', '👋'\],\s*\['data', '📦'\],\s*\]\)/,"setAll(new Map([['only', 'value']]))")
-                assert.notEqual(mapSolution,solution)
-                await writeFile(file,mapSolution)
-                compile(file)
-                execFileSync('pnpm',['exec','tsc','-b','--force'],{stdio:'inherit'})
-                execFileSync('pnpm',['exec','eslint',file],{stdio:'inherit'})
-                await page.reload()
-                await show(nav)
-                await select(title)
-                await mapText(['key: 🆕'])
-                await click('Add')
-                await mapText(['key: updated'])
-                assert.equal(((await content.locator('pre').textContent()).match(/:/g)||[]).length,1)
-                await click('Set new data')
-                await mapText(['only: value'])
-                assert.equal(((await content.locator('pre').textContent()).match(/:/g)||[]).length,1)
-                assert.ok(!(await content.locator('pre').textContent()).includes('key:'))
-              } else {
-                await show(content.getByText('Current: first',{exact:true}))
-                await show(content.getByText('History: first',{exact:true}))
-                for(const [label,value] of [['Set second','second'],['Set third','third'],['Back','second'],['Back','first'],['Forward','second'],['Forward','third']]){
-                  await click(label)
-                  await show(content.getByText('Current: '+value,{exact:true}))
-                }
-                await show(content.getByText('History: first → second → third',{exact:true}))
-              }
-              log(id+' strict compile and full consumer scenarios')
-              await writeFile(file,old)
-              await show(message)
-              log(id+' restored starter')
+          try{
+           await page.goto('http://127.0.0.1:5173')
+           await show(nav)
+           for(const [id,comp,hook,title] of cases){
+            await select(title)
+            const message=content.getByText('Реализуй '+hook,{exact:true})
+            await show(message)
+            const file='src/tasks/hooks/'+id+'/'+comp+'.tsx'
+            const old=await readFile(file,'utf8')
+            originals.set(file,old)
+            let source='import {'+imports[hook]+'} from "react"\n'+old.replace("throw new Error('Реализуй "+hook+"')",solutions[hook])
+            assert.notEqual(source,old)
+            if(hook==='useFocus'){
+             source=source.replace("  const [ref, focus] = useFocus<HTMLInputElement>()","  const [ref, focus] = useFocus<HTMLInputElement>()\n  const [visible,setVisible]=useState(true)")
+               .replace('<input ref={ref} placeholder="Поле для фокуса" />','{visible && <input ref={ref} placeholder="Поле для фокуса" />}\n      <button type="button" onClick={()=>setVisible(v=>!v)}>Toggle target</button>')
+            }else if(hook==='useHover'){
+             source=source.replace("  const [ref, hovered] = useHover<HTMLDivElement>()","  const [ref, hovered] = useHover<HTMLDivElement>()\n  const [visible,setVisible]=useState(true)")
+               .replace('<div ref={ref} tabIndex={0}>','<button type="button" onClick={()=>setVisible(v=>!v)}>Toggle target</button>\n      <output>{hovered ? "active" : "inactive"}</output>\n      {visible && <div ref={ref} tabIndex={0}>')
+               .replace("{hovered ? 'Hovered' : 'Not hovered'}\n      </div>","{hovered ? 'Hovered' : 'Not hovered'}\n      </div>}")
             }
-            await select('Реализовать компонент с fetch')
-            await show(content.getByText('Здесь будет UI задания с загрузкой данных.',{exact:true}))
-            log('navigation from failed hook to unrelated task')
-          } finally {
-            for(const [file,source] of originals)await writeFile(file,source)
-            await browser.close()
+            await writeFile(file,source)
+            compile(file)
+            if(hook==='useFocus'){
+             const input=content.getByPlaceholder('Поле для фокуса')
+             await show(input)
+             const n=errors.length
+             await click('Установить фокус')
+             assert.equal(await input.evaluate(el=>document.activeElement===el),true)
+             await click('Toggle target')
+             await input.waitFor({state:'detached'})
+             await click('Установить фокус')
+             assert.equal(errors.length,n)
+             await click('Toggle target')
+             await show(input)
+             await click('Установить фокус')
+             assert.equal(await input.evaluate(el=>document.activeElement===el),true)
+            }else if(hook==='useLatest'){
+             const input=content.getByPlaceholder('Введите текст')
+             await show(input)
+             await input.fill('abc')
+             await show(content.getByText('Первая версия: abc',{exact:true}))
+             await click('Обновить callback')
+             await input.fill('def')
+             await show(content.getByText('Новая версия: def',{exact:true}))
+             await input.fill('ghi')
+             await show(content.getByText('Новая версия: ghi',{exact:true}))
+            }else{
+             const target=content.locator('div[tabindex="0"]')
+             await show(target)
+             await page.mouse.move(0,0)
+             await show(content.getByText('Not hovered',{exact:true}))
+             await target.hover()
+             await show(content.getByText('Hovered',{exact:true}))
+             await page.mouse.move(0,0)
+             await show(content.getByText('Not hovered',{exact:true}))
+             await target.hover()
+             await show(content.getByText('Hovered',{exact:true}))
+             const detached=await target.elementHandle()
+             assert.ok(detached)
+             // Trigger the button without moving the mouse away, so no mouseleave can hide a cleanup bug.
+             await content.getByRole('button',{name:'Toggle target'}).evaluate(el=>el.click())
+             await target.waitFor({state:'detached'})
+             await show(content.getByText('inactive',{exact:true}))
+             await detached.evaluate(el=>el.dispatchEvent(new MouseEvent('mouseenter')))
+             await page.waitForTimeout(100)
+             await show(content.getByText('inactive',{exact:true}))
+             await page.mouse.move(0,0)
+             await click('Toggle target')
+             await show(target)
+             await target.hover()
+             await show(content.getByText('Hovered',{exact:true}))
+             await page.mouse.move(0,0)
+             await show(content.getByText('Not hovered',{exact:true}))
+            }
+            log(id+' strict/project compilation, solution ESLint and behavior')
+            await writeFile(file,old)
+            await show(message)
+            log(id+' restored starter')
+           }
+           await select('Реализовать компонент с fetch')
+           await show(content.getByText('Здесь будет UI задания с загрузкой данных.',{exact:true}))
+           log('navigation from failed hook to unrelated task')
+          }finally{
+           for(const [file,source] of originals)await writeFile(file,source)
+           await browser.close()
           }
           JS
           node /tmp/browser-check.mjs
