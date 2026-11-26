@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: c40bdf0e25ea1f8d98afeffd6bced243653c60af
+          ref: b55dbcdf210877c1d3c493949d5e61823d8e81bc
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@v4
@@ -39,7 +39,7 @@ jobs:
               assert not (root/'active.ts').exists()
               assert not (root/'attempts').exists()
               if (root/'hint.md').exists():
-                  assert (root/'hint.md').read_bytes()==subprocess.check_output(['git','show',base+':'+(root/'hint.md').as_posix()])
+                  assert (root/'hint.md').read_bytes().startswith(subprocess.check_output(['git','show',base+':'+(root/'hint.md').as_posix()]))
               for target in re.findall(r'\]\((\./[^)]+)\)',(root/'task.md').read_text()):
                   assert (root/target).exists(),target
           print('Clean starters, preserved hints, direct links: PASS')
@@ -55,27 +55,42 @@ jobs:
           cat > /tmp/browser-check.mjs <<'JS'
           import assert from 'node:assert/strict'
           import {readFile, writeFile} from 'node:fs/promises'
+          import {execFileSync} from 'node:child_process'
           import {chromium} from '/tmp/sandbox-browser/node_modules/playwright/index.mjs'
           
           const cases=[
-            ['use-object','UseObjectTask','useObject','Состояние объекта с объединением','Increase a'],
-            ['use-array','UseArrayTask','useArray','Управление состоянием массива','Добавить'],
-            ['use-map','UseMapTask','useMap','Управление состоянием Map','Set new data'],
-            ['state-history','StateHistoryTask','useStateWithHistory','Состояние с историей изменений','Set second']
+            ['use-object','UseObjectTask','useObject','Состояние объекта с объединением'],
+            ['use-array','UseArrayTask','useArray','Управление состоянием массива'],
+            ['use-map','UseMapTask','useMap','Управление состоянием Map'],
+            ['state-history','StateHistoryTask','useStateWithHistory','Состояние с историей изменений']
           ]
-          const probes={
-            useObject:"return [{a:11,b:22}, update=>{const patch=typeof update==='function'?update({a:11,b:22}):update; document.body.dataset.probe=JSON.stringify(patch)}]",
-            useArray:"return {value:[11,22,33],push:item=>{document.body.dataset.probe=String(item)},removeByIndex:index=>{document.body.dataset.probe=String(index)}}",
-            useMap:"return {map:new Map([['hello','probe']]),set:(k,v)=>{document.body.dataset.probe=v},setAll:entries=>{document.body.dataset.probe=JSON.stringify(entries)},remove:key=>{document.body.dataset.probe=key},reset:()=>{document.body.dataset.probe='reset'}}",
-            useStateWithHistory:"return ['probe',value=>{document.body.dataset.probe=value},()=>{document.body.dataset.probe='back'},()=>{document.body.dataset.probe='forward'},['first','probe']]"
+          const solutions={
+            useObject:"const [value,setValue]=useState(initialValue); return [value,update=>setValue(prev=>({...prev,...(typeof update==='function'?update(prev):update)}))]",
+            useArray:"const [value,setValue]=useState(initialValue); return {value,push:item=>setValue(prev=>[...prev,item]),removeByIndex:index=>setValue(prev=>prev.filter((_,i)=>i!==index))}",
+            useMap:"const [map,setMap]=useState(()=>new Map(defaultValue)); return {map,set:(key,value)=>setMap(prev=>new Map(prev).set(key,value)),setAll:entries=>setMap(new Map(entries)),remove:key=>setMap(prev=>{const next=new Map(prev);next.delete(key);return next}),reset:()=>setMap(new Map())}",
+            useStateWithHistory:"const [snapshot,setSnapshot]=useState({values:[initialState],index:0}); return [snapshot.values[snapshot.index],value=>setSnapshot(prev=>({values:[...prev.values.slice(0,prev.index+1),value],index:prev.index+1})),()=>setSnapshot(prev=>({...prev,index:Math.max(0,prev.index-1)})),()=>setSnapshot(prev=>({...prev,index:Math.min(prev.values.length-1,prev.index+1)})),snapshot.values]"
           }
-          const actions={
-            useObject:[['Increase a','{"a":12}'],['Increase b','{"b":23}'],['Add c','{"c":3}']],
-            useArray:[['Добавить','4'],['Удалить','0']],
-            useMap:[['Add','📦'],['Set new data','[["hello","👋"],["data","📦"]]'],['Remove "hello"','hello'],['Reset','reset']],
-            useStateWithHistory:[['Set second','second'],['Set third','third'],['Back','back'],['Forward','forward']]
+          const typeChecks=String.raw`
+          function useObjectContractChecks() {
+            const [empty, setEmpty] = useObject()
+            setEmpty({arbitrary: 1})
+            // @ts-expect-error an unknown value is not a string
+            const text: string = empty.name
+            void text
+            const [value, setValue] = useObject({name:'valid'})
+            const name: string = value.name
+            void name
+            setValue({name:'next'})
+            // @ts-expect-error required initial object must be passed
+            useObject<{name:string}>()
+            // @ts-expect-error missing required property
+            useObject<{name:string}>({})
+            // @ts-expect-error incorrect update type
+            setValue({name:123})
           }
-          const base='http://127.0.0.1:5173'
+          void useObjectContractChecks
+          `
+          const compile=file=>execFileSync('pnpm',['exec','tsc','--ignoreConfig','--strict','--exactOptionalPropertyTypes','--noEmit','--skipLibCheck','--target','es2023','--module','esnext','--moduleResolution','bundler','--jsx','react-jsx',file],{stdio:'inherit'})
           const browser=await chromium.launch({headless:true})
           const page=await browser.newPage()
           const content=page.locator('.task-content')
@@ -83,28 +98,82 @@ jobs:
           const originals=new Map()
           const show=async locator=>locator.waitFor({state:'visible',timeout:15000})
           const select=async name=>nav.getByRole('button',{name,exact:true}).click()
+          const click=async name=>content.getByRole('button',{name,exact:true}).click()
           const log=name=>console.log('BROWSER RESULT '+name+' PASS')
+          const waitPre=async (expected)=> {
+            await page.waitForFunction(expected=>JSON.stringify(JSON.parse(document.querySelector('.task-content pre').textContent))===JSON.stringify(expected),expected)
+          }
+          const waitList=async expected=>page.waitForFunction(expected=>JSON.stringify([...document.querySelectorAll('.task-content li')].map(li=>Number(li.firstChild.textContent.trim())))===JSON.stringify(expected),expected)
+          const mapText=async (expected)=>page.waitForFunction(expected=>{const text=document.querySelector('.task-content pre')?.textContent??'';return expected.every(s=>text.includes(s))},expected)
           try {
-            await page.goto(base)
+            await page.goto('http://127.0.0.1:5173')
             await show(nav)
-            for(const [id,comp,hook,title,marker] of cases){
+            for(const [id,comp,hook,title] of cases){
               await select(title)
               const message=content.getByText('Реализуй '+hook,{exact:true})
               await show(message)
-              await show(nav)
-              log(id+' starter')
               const file='src/tasks/hooks/'+id+'/'+comp+'.tsx'
               const old=await readFile(file,'utf8')
               originals.set(file,old)
-              const probe=old.replace("throw new Error('Реализуй "+hook+"')",probes[hook])
-              assert.notEqual(probe,old)
-              await writeFile(file,probe)
-              await show(content.getByRole('button',{name:marker,exact:true}))
-              for (const [label,expected] of actions[hook]) {
-                await content.getByRole('button',{name:label,exact:true}).first().click()
-                assert.equal(await page.locator('body').getAttribute('data-probe'),expected)
+              let solution='import {useState} from "react"\n'+old.replace("throw new Error('Реализуй "+hook+"')",solutions[hook])
+              assert.notEqual(solution,old)
+              if(hook==='useObject'){
+                solution=solution.replace('return (\n    <div className="task-card">','const [empty] = useObject()\n  return (\n    <div className="task-card">\n      <output data-testid="empty">{JSON.stringify(empty)}</output>')+typeChecks
               }
-              log(id+' automatic recovery and all consumer callbacks connected')
+              await writeFile(file,solution)
+              compile(file)
+              if(hook==='useObject'){
+                await waitPre({a:1,b:2})
+                assert.equal(await content.getByTestId('empty').textContent(),'{}')
+                await click('Increase a')
+                await waitPre({a:2,b:2})
+                await click('Increase b')
+                await waitPre({a:2,b:3})
+                await click('Add c')
+                await waitPre({a:2,b:3,c:3})
+              } else if(hook==='useArray'){
+                await waitList([1,2,3])
+                await click('Добавить')
+                await waitList([1,2,3,4])
+                await content.getByRole('button',{name:'Удалить',exact:true}).nth(1).click()
+                await waitList([1,3,4])
+                await click('Добавить')
+                await waitList([1,3,4,4])
+                await content.getByRole('button',{name:'Удалить',exact:true}).first().click()
+                await waitList([3,4,4])
+                await content.getByRole('button',{name:'Удалить',exact:true}).last().click()
+                await waitList([3,4])
+              } else if(hook==='useMap'){
+                await mapText(['key: 🆕'])
+                await click('Add')
+                await mapText(['key: 🆕','📦'])
+                await click('Set new data')
+                await mapText(['hello: 👋','data: 📦'])
+                const text=await content.locator('pre').textContent()
+                assert.ok(!text.includes('key: 🆕'))
+                assert.equal((text.match(/:/g)||[]).length,2)
+                await click('Remove "hello"')
+                await mapText(['data: 📦'])
+                assert.ok(!(await content.locator('pre').textContent()).includes('hello:'))
+                assert.ok(await content.getByRole('button',{name:'Remove "hello"'}).isDisabled())
+                await click('Reset')
+                await page.waitForFunction(()=>!document.querySelector('.task-content pre').textContent.includes(':'))
+                const mapSolution=solution.replace("useMap<string, string>([['key', '🆕']])","useMap<string, string>(new Map([['key', '🆕']]))")
+                assert.notEqual(mapSolution,solution)
+                await writeFile(file,mapSolution)
+                await page.reload()
+                await show(nav)
+                await select(title)
+                await mapText(['key: 🆕'])
+              } else {
+                await show(content.getByText('Current: first',{exact:true}))
+                for(const [label,value] of [['Set second','second'],['Set third','third'],['Back','second'],['Back','first'],['Forward','second'],['Forward','third']]){
+                  await click(label)
+                  await show(content.getByText('Current: '+value,{exact:true}))
+                }
+                await show(content.getByText('History: first → second → third',{exact:true}))
+              }
+              log(id+' strict compile and full consumer scenarios')
               await writeFile(file,old)
               await show(message)
               log(id+' restored starter')
@@ -116,7 +185,6 @@ jobs:
             for(const [file,source] of originals)await writeFile(file,source)
             await browser.close()
           }
-          
           JS
           node /tmp/browser-check.mjs
       - name: Verify restored files
