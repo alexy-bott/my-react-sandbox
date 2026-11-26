@@ -1,4 +1,4 @@
-name: Sandbox pilot browser verification
+name: Sandbox second pilot verification
 
 on:
   push:
@@ -8,14 +8,15 @@ permissions:
   contents: read
 
 jobs:
-  browser:
+  verify:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 64abebfd769685b4a4a35307f8ef177d382e9fb3
+          ref: 8f6c1216fe9e66478945b8fb4788e902f74dbf95
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -23,11 +24,30 @@ jobs:
         run: |
           npm install --global pnpm@10.26.0
           pnpm install --frozen-lockfile
-      - name: Build and lint candidate
+      - name: Build second pilot
+        run: pnpm build
+      - name: Lint ordinary exercise files and registry
+        run: pnpm exec eslint src/tasks/index.ts src/tasks/hooks/use-previous src/tasks/components/user-list-filter src/tasks/components/base-fetch src/tasks/components/mocked-data-list
+      - name: Report full lint including deliberate review defects
+        continue-on-error: true
+        run: pnpm lint
+      - name: Verify clean starters and preserved source
         run: |
-          pnpm build
-          pnpm exec eslint src/sandbox/TaskErrorBoundary.tsx
-      - name: Install isolated browser test dependencies
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          roots=['hooks/use-previous','components/user-list-filter','components/base-fetch','components/mocked-data-list','review/refactor-41-state-mutation']
+          for name in roots:
+              root=Path('src/tasks')/name
+              for f in (root/'starter').rglob('*'):
+                  if f.is_file():
+                      assert f.read_bytes()==(root/f.relative_to(root/'starter')).read_bytes(), f
+          source=Path('src/tasks/review/refactor-41-state-mutation/source.txt')
+          old=subprocess.check_output(['git','show','ecc2c28eb5a681f7f87f5467be46bcda83033fe8:src/tasks/review/refactor-41-state-mutation/attempts/current/source.txt'])
+          assert source.read_bytes()==old
+          print('Starter copies and original review source: PASS')
+          PY
+      - name: Install isolated browser dependencies
         run: |
           npm install --prefix /tmp/sandbox-browser playwright@1.56.1
           /tmp/sandbox-browser/node_modules/.bin/playwright install --with-deps chromium
@@ -39,131 +59,85 @@ jobs:
           import assert from 'node:assert/strict'
           import {readFile, writeFile} from 'node:fs/promises'
           import {chromium} from '/tmp/sandbox-browser/node_modules/playwright/index.mjs'
-          
-          const file='src/tasks/hooks/use-toggle/UseToggleTask.tsx'
-          const original=await readFile(file,'utf8')
-          const solution=original.replace("import type {Dispatch, SetStateAction} from 'react'", "import {useState, type Dispatch, type SetStateAction} from 'react'").replace(/function useToggle\(\): ToggleResult \{[\s\S]*?\n\}/, 'function useToggle(defaultValue = false): ToggleResult {\n  const [value, setValue] = useState(defaultValue)\n  const toggle = () => setValue(previous => !previous)\n  return [value, toggle, setValue]\n}')
-          assert.notEqual(original,solution)
           const browser=await chromium.launch({headless:true})
           const page=await browser.newPage()
-          const base='http://127.0.0.1:5173'
           const nav=page.getByRole('navigation',{name:'Список заданий'})
-          const task=nav.getByRole('button',{name:'Булево состояние с переключением',exact:true})
-          const other=nav.getByRole('button',{name:'Реализовать компонент с fetch',exact:true})
           const content=page.locator('.task-content')
-          const status=(value)=>content.getByText('Enabled: '+value,{exact:true})
-          const show=async(locator)=>locator.waitFor({state:'visible',timeout:10000})
-          const log=(name,detail='')=>console.log('BROWSER RESULT '+name+' '+detail)
-          const reload=async()=>{await page.reload();await show(nav)}
-          const recover=async(locator,label)=>{
-            await locator.waitFor({state:'visible',timeout:15000})
-            log(label,'automatic')
+          const base='http://127.0.0.1:5173'
+          const show=async locator=>locator.waitFor({state:'visible',timeout:15000})
+          const select=async name=>nav.getByRole('button',{name,exact:true}).click()
+          const log=name=>console.log('BROWSER RESULT '+name+' PASS')
+          const originals=new Map()
+          const replace=async (file,fn,marker)=>{
+            const old=originals.get(file)??await readFile(file,'utf8')
+            originals.set(file,old)
+            const next=fn(old)
+            assert.notEqual(next,old)
+            await writeFile(file,next)
+            for(let i=0;i<50;i++){
+              const response=await fetch(base+'/'+file+'?t='+Date.now())
+              if(response.ok&&(await response.text()).includes(marker))return
+              await new Promise(resolve=>setTimeout(resolve,200))
+            }
+            throw new Error('Updated module not served: '+file)
           }
           try {
             await page.goto(base)
-            await show(task)
-            await task.click()
-            await show(content.getByText('Реализуй useToggle в файле UseToggleTask.tsx',{exact:true}))
             await show(nav)
-            log('starter','PASS')
-            await other.click()
+            await select('Хранение предыдущего значения')
+            await show(content.getByText('current: 0',{exact:true}))
+            await content.getByRole('button',{name:'Increase',exact:true}).click()
+            await show(content.getByText('current: 1',{exact:true}))
+            await content.getByRole('button',{name:'Decrease',exact:true}).click()
+            await show(content.getByText('current: 0',{exact:true}))
+            log('usePrevious starter and consumer')
+            await select('Список пользователей с фильтром')
+            await show(content.getByText('Реализуй список из 7 пользователей.',{exact:true}))
+            log('filter starter')
+            await select('Реализовать компонент с fetch')
             await show(content.getByText('Здесь будет UI задания с загрузкой данных.',{exact:true}))
-            await task.click()
+            log('fetch starter')
+            await select('Список данных через асинхронный мок')
+            await show(content.getByText('Реализуй загрузку списка через асинхронный мок.',{exact:true}))
+            log('mock starter')
+            await select('Рефакторинг 41: Две кнопки: счётчик и имя')
+            await show(content.getByRole('button',{name:'Anton',exact:true}))
+            await content.getByRole('button',{name:'Anton',exact:true}).click()
+            await show(content.getByRole('button',{name:'Anton',exact:true}))
+            await content.getByRole('button',{name:'0',exact:true}).click()
+            await show(content.getByRole('button',{name:'1',exact:true}))
+            await show(content.getByRole('button',{name:'Alex',exact:true}))
+            await content.getByRole('button',{name:'1',exact:true}).click()
+            await show(content.getByRole('button',{name:'1',exact:true}))
+            log('review original observable bugs preserved')
+            await select('Хранение предыдущего значения')
+            const previousFile='src/tasks/hooks/use-previous/UsePreviousTask.tsx'
+            await replace(previousFile,old=>old.replace('void state\n  return undefined','return state').replace('previous:', 'probe:'),'probe:')
+            await page.reload()
+            await show(content.getByText('probe: 0',{exact:true}))
+            await content.getByRole('button',{name:'Increase',exact:true}).click()
+            await show(content.getByText('probe: 1',{exact:true}))
+            log('consumer uses edited hook (probe, not exercise solution)')
+            await select('Список данных через асинхронный мок')
+            const mockRoot='src/tasks/components/mocked-data-list/'
+            await replace(mockRoot+'api.ts',old=>old.replace("Promise.reject(new Error('Мок ещё не реализован'))","Promise.resolve({result:{code:6,items:[{id:15,name:'mock-probe'}]}})"),'mock-probe')
+            await replace(mockRoot+'MockedDataListTask.tsx',old=>"import {useEffect,useState} from 'react'\nimport {fetchItems} from './api'\nexport function MockedDataListTask(){ const [value,setValue]=useState(''); useEffect(()=>{ void fetchItems().then(data=>setValue(data.result.items[0].name)) },[]);return <p>{value}</p> }\n",'fetchItems')
+            await page.reload()
+            await show(content.getByText('mock-probe',{exact:true}))
+            log('mock imports adjacent editable API')
+            await select('Булево состояние с переключением')
             await show(content.getByText('Реализуй useToggle в файле UseToggleTask.tsx',{exact:true}))
-            log('switch from error and back','PASS')
-          
-            await page.evaluate(() => { window.__sandboxCheck = 'same page' })
-            const partial=solution.replace('return [value, toggle, setValue]', "throw new Error('Промежуточная реализация')")
-            await writeFile(file,partial)
-            await recover(content.getByText('Промежуточная реализация',{exact:true}),'partial HMR')
-            await show(nav)
-            await writeFile(file,solution)
-            await recover(status('Off'),'solution HMR')
-            await content.getByRole('button',{name:'Toggle',exact:true}).click()
-            await show(status('On'))
-            await content.getByRole('button',{name:'Toggle',exact:true}).click()
-            await show(status('Off'))
-            await content.getByRole('button',{name:'Enable',exact:true}).click()
-            await show(status('On'))
-            await content.getByRole('button',{name:'Disable',exact:true}).click()
-            await show(status('Off'))
-            assert.equal(await page.evaluate(() => localStorage.getItem('active-task-id')), 'use-toggle', 'Automatic recovery must preserve active task')
-            log('three controls and default false','PASS')
-          
-            await content.getByRole('button',{name:'Enable',exact:true}).click()
-            await show(status('On'))
-            await page.evaluate(() => { window.__sandboxCheck = 'healthy page' })
-            await writeFile(file,solution.replace('Enabled:', 'State:'))
-            await show(content.getByText('State: On',{exact:true}))
-            assert.equal(await page.evaluate(() => window.__sandboxCheck), 'healthy page', 'Healthy HMR must not reload')
-            log('healthy HMR retains state and document','PASS')
-
-            const variant=solution.replace('= useToggle()','= useToggle(true)').replace('setValue(false)','setValue(previous => !previous)')
-            await writeFile(file,variant)
-            await reload();await show(status('On'))
-            await content.getByRole('button',{name:'Disable',exact:true}).click()
-            await show(status('Off'))
-            await content.getByRole('button',{name:'Disable',exact:true}).click()
-            await show(status('On'))
-            log('default true and functional setter','PASS')
-          
-            await writeFile(file,solution.replace('return [value, toggle, setValue]','return undefined'))
-            await reload()
-            await show(content.getByText('Задание пока не отображается.',{exact:true}))
-            await show(nav)
-            await other.click()
-            await show(content.getByText('Здесь будет UI задания с загрузкой данных.',{exact:true}))
-            log('invalid return isolation','PASS')
-          
-            // Select the valid task before introducing a syntax error.
-            await writeFile(file,solution)
-            await reload()
-            await task.click()
-            await show(status('Off'))
-            await writeFile(file,solution+'\nconst =\n')
-            const outcome=await Promise.race([
-              content.getByText('Задание пока не отображается.',{exact:true}).waitFor({state:'visible',timeout:10000}).then(()=> 'boundary').catch(()=>null),
-              page.locator('vite-error-overlay').waitFor({state:'attached',timeout:10000}).then(()=> 'vite overlay').catch(()=>null)
-            ])
-            assert.ok(outcome, 'Syntax failure must show a diagnostic')
-            log('syntax error',String(outcome))
-            // A new label distinguishes the repaired module from the stale DOM.
-            await writeFile(file,solution.replace('Enabled:', 'Recovered:'))
-            // Wait for Vite's transformed module, not a stale render.
-            const waitForModule=async (marker)=>{
-              const url=base+'/'+file
-              for(let i=0;i<50;i++){
-                const response=await fetch(url+'?t='+Date.now())
-                if(response.ok && (await response.text()).includes(marker)) return
-                await new Promise(resolve=>setTimeout(resolve,200))
-              }
-              throw new Error('Vite did not serve updated module: '+marker)
-            }
-            await waitForModule('Recovered:')
-            const repaired=content.getByText('Recovered: Off',{exact:true})
-            try {
-              await repaired.waitFor({state:'visible',timeout:4000})
-              await page.locator('vite-error-overlay').waitFor({state:'detached',timeout:4000})
-              log('syntax recovery','automatic')
-            } catch {
-              await reload()
-              await show(repaired)
-              await page.locator('vite-error-overlay').waitFor({state:'detached',timeout:10000})
-              log('syntax recovery','manual reload fallback PASS')
-            }
-            await writeFile(file,original)
-            await waitForModule('Реализуй useToggle в файле UseToggleTask.tsx')
-            await reload()
-            await show(content.getByText('Реализуй useToggle в файле UseToggleTask.tsx',{exact:true}))
-            log('restored starter after reload','PASS')
-          } finally {
-            await writeFile(file,original)
+            await select('Список пользователей с фильтром')
+            await show(content.getByText('Реализуй список из 7 пользователей.',{exact:true}))
+            log('switching across first and second pilot')
+          }finally{
+            for(const [file,original] of originals)await writeFile(file,original)
             await browser.close()
           }
           
           JS
           node /tmp/browser-check.mjs
-      - name: Verify original files restored
+      - name: Verify restored files
         if: always()
         run: |
           git diff --exit-code
