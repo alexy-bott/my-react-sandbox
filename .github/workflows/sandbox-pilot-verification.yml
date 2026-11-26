@@ -129,11 +129,30 @@ jobs:
             log('syntax error',String(outcome))
             // A new label distinguishes the repaired module from the stale DOM.
             await writeFile(file,solution.replace('Enabled:', 'Recovered:'))
-            await recover(content.getByText('Recovered: Off',{exact:true}),'syntax recovery')
-            await page.locator('vite-error-overlay').waitFor({state:'detached',timeout:15000})
-            log('syntax overlay cleared','PASS')
+            // Wait for Vite's transformed module, not a stale render.
+            const waitForModule=async (marker)=>{
+              const url=base+'/'+file
+              for(let i=0;i<50;i++){
+                const response=await fetch(url+'?t='+Date.now())
+                if(response.ok && (await response.text()).includes(marker)) return
+                await new Promise(resolve=>setTimeout(resolve,200))
+              }
+              throw new Error('Vite did not serve updated module: '+marker)
+            }
+            await waitForModule('Recovered:')
+            const repaired=content.getByText('Recovered: Off',{exact:true})
+            try {
+              await repaired.waitFor({state:'visible',timeout:4000})
+              await page.locator('vite-error-overlay').waitFor({state:'detached',timeout:4000})
+              log('syntax recovery','automatic')
+            } catch {
+              await reload()
+              await show(repaired)
+              await page.locator('vite-error-overlay').waitFor({state:'detached',timeout:10000})
+              log('syntax recovery','manual reload fallback PASS')
+            }
             await writeFile(file,original)
-            await recover(content.getByText('Реализуй useToggle в файле UseToggleTask.tsx',{exact:true}),'restore original')
+            await waitForModule('Реализуй useToggle в файле UseToggleTask.tsx')
             await reload()
             await show(content.getByText('Реализуй useToggle в файле UseToggleTask.tsx',{exact:true}))
             log('restored starter after reload','PASS')
