@@ -91,11 +91,7 @@ async function askCategory(readline) {
   })
 
   while (true) {
-    const answer = (await readline.question('\nВыберите раздел [4]:\n> ')).trim()
-
-    if (!answer) {
-      return 'js-basics'
-    }
+    const answer = (await readline.question('\nВыберите раздел:\n> ')).trim()
 
     const category = CATEGORIES[Number(answer) - 1]
 
@@ -109,12 +105,13 @@ async function askCategory(readline) {
 
 async function askFileName(readline) {
   while (true) {
-    const name = (await readline.question('Имя рабочего файла (например, timer.js или useToggle.ts):\n> ')).trim()
+    const name = (await readline.question('Имя рабочего файла (например, timer.js или UseToggleTask.tsx):\n> ')).trim()
     if (/^[\p{L}\p{N}_-][\p{L}\p{N}_.-]*\.[a-z0-9]+$/iu.test(name) &&
-        !/^(con|prn|aux|nul|com[1-9]|lpt[1-9])\./i.test(name)) {
+        !/^(con|prn|aux|nul|com[1-9]|lpt[1-9])\./i.test(name) &&
+        !/^(task|hint)\.md$/i.test(name)) {
       return name
     }
-    console.log('Введи имя с расширением без пути к папке.')
+    console.log('Введи имя с расширением без пути к папке. Имена task.md и hint.md зарезервированы.')
   }
 }
 
@@ -147,15 +144,15 @@ async function main() {
   const directory = join(groupDirectory, id)
   try {
     await mkdir(join(directory, 'starter'))
-    await mkdir(join(directory, 'attempts/current'), {recursive: true})
-    await writeFile(join(directory, 'task.md'), `# ${title}\n\n[Рабочий файл](./attempts/current/${fileName})\n`)
+    await writeFile(join(directory, 'task.md'), `# ${title}\n\n**Рабочий файл:** [${fileName}](./${fileName}).\n`)
     await writeFile(join(directory, 'starter', fileName), '')
-    await writeFile(join(directory, 'attempts/current', fileName), '')
+    await writeFile(join(directory, fileName), '')
   } catch (error) {
     await rm(directory, {recursive: true, force: true})
     throw error
   }
-  console.log(`Создана заготовка: src/tasks/${category}/${id}/task.md`)
+  console.log(`Создан черновик: src/tasks/${category}/${id}/task.md`)
+  console.log('Подготовь условие и рабочие файлы. Затем обнови starter/ и подключи готовое упражнение к каталогу.')
 }
 
 main().catch((error) => {

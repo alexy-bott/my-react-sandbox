@@ -18,8 +18,8 @@ export function SandboxGuideTask() {
           <p>Прочитай условие задачи.</p>
         </li>
         <li>
-          <code>attempts/current/</code>
-          <p>Здесь ты решаешь задачу.</p>
+          <code>Рабочий файл</code>
+          <p>Открой его по ссылке в условии: рядом с task.md или в attempts/current/ у старых задач.</p>
         </li>
         <li>
           <code>hint.md</code> <span className="task-note">(необязательно)</span>
@@ -46,8 +46,8 @@ export function SandboxGuideTask() {
           <code>pnpm task:new</code>
         </p>
         <p>
-          Введи название, выбери раздел и имя рабочего файла. Остальное
-          команда подготовит сама.
+          Введи название, выбери раздел и имя рабочего файла. Команда создаст пустой
+          черновик автора; подготовь условие и заготовку перед подключением к каталогу.
         </p>
       </section>
 
