@@ -1,10 +1,15 @@
-import source from './source.txt?raw'
-
-export function Refactor41Task() {
-  return (
-    <div className="task-card">
-      <p className="task-note">Исходник для ревью. Условие — в task.md; замечания — в attempts/current/review.md.</p>
-      <pre style={{whiteSpace: 'pre-wrap'}}><code>{source}</code></pre>
-    </div>
-  )
+import { useCallback, useState } from "react";
+export function App() {
+  const [count, setCount] = useState(0);
+  const [count2, setCount2] = useState({ name: 'Anton' });
+  // Техническая строка для проверки типов: не меняет поведение примера.
+  void setCount2;
+  const handleBtnClick2 = () => { count2.name = 'Alex'; };
+  const btnClick = () => { setCount(count + 1); };
+  const handleBtnClick = useCallback(() => { btnClick(); }, []);
+  return <div>
+    <button onClick={handleBtnClick}>{count}</button>
+    <button onClick={handleBtnClick2}>{count2.name}</button>
+    <div /><input type="text" />
+  </div>;
 }

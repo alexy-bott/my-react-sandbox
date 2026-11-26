@@ -1,7 +1,6 @@
 import {lazy, type ComponentType} from 'react'
 import {SandboxGuideTask} from './00-sandbox-guide/active'
 import {AdaptiveOverflowMenuTask} from './components/adaptive-overflow-menu/active'
-import {BaseFetch} from './components/base-fetch/active'
 import CardWildberies from './components/card-and-filters/active'
 import {CheckboxListTask} from './components/checkbox-list/active'
 import {ConditionalInputsTask} from './review/conditional-input-reset/active'
@@ -21,7 +20,6 @@ import {InputAutocompleteTask} from './components/input-autocomplete/active'
 import {UserTableCityFilterTask} from './components/user-table-city-filter/active'
 import {PhoneNumberInputTask} from './components/phone-number-input/active'
 import {CountdownTimerTask} from './components/countdown-timer/active'
-import {UserListFilterTask} from './components/user-list-filter/active'
 import {TicTacToeTask} from './components/tic-tac-toe/active'
 import {UserListAdvancedTask} from './components/user-list-advanced/active'
 import {UseDebounceThrottleEffectTask} from './hooks/use-debounce-throttle-effect/active'
@@ -55,7 +53,6 @@ import {UseKeyPressTask} from './hooks/use-key-press/active'
 import {UseLatestTask} from './hooks/use-latest/active'
 import {UseMapTask} from './hooks/use-map/active'
 import {UseMutationObserverTask} from './hooks/use-mutation-observer/active'
-import {UsePreviousTask} from './hooks/use-previous/active'
 import {UseQueryParamsStateTask} from './hooks/use-query-params-state/active'
 import {UseStateWithResetTask} from './hooks/use-state-with-reset/active'
 import {UserSearchCodeReviewTask} from './review/user-search-code-review/active'
@@ -63,7 +60,6 @@ import {UseMinMatchMediaTask} from './hooks/use-min-match-media/active'
 import {UsersPageProductionReviewTask} from './review/users-page-production-review/active'
 import {MultistepRegistrationFormTask} from './components/multistep-registration-form/active'
 import {TimeoutBasicsTask} from './js-basics/timeout-basics/active'
-import {MockedDataListTask} from './components/mocked-data-list/active'
 import {MemoryGameTask} from './components/memory-game/active'
 import {UseStepTask} from './hooks/use-step/active'
 import {UseThrottleTask} from './hooks/use-throttle/active'
@@ -102,7 +98,6 @@ import {Refactor36Task} from './review/refactor-36-rest-dependencies/active'
 import {Refactor37Task} from './review/refactor-37-heavy-send/active'
 import {Refactor39Task} from './review/refactor-39-timer-controls/active'
 import {Refactor40Task} from './review/refactor-40-car-garage/active'
-import {Refactor41Task} from './review/refactor-41-state-mutation/active'
 import {Refactor42Task} from './review/refactor-42-companies-modules/active'
 import {Refactor43Task} from './review/refactor-43-child-render/active'
 import {Refactor44Task} from './review/refactor-44-game-effects/active'
@@ -153,7 +148,9 @@ export const tasks: Task[] = [
   {
     id: 'base-fetch',
     title: 'Реализовать компонент с fetch',
-    component: BaseFetch,
+    component: lazy(() =>
+      import('./components/base-fetch/BaseFetch').then(module => ({default: module.BaseFetch})),
+    ),
     category: 'components',
   },
   {
@@ -315,7 +312,9 @@ export const tasks: Task[] = [
   {
     id: 'user-list-filter',
     title: 'Список пользователей с фильтром',
-    component: UserListFilterTask,
+    component: lazy(() =>
+      import('./components/user-list-filter/UserListFilterTask').then(module => ({default: module.UserList})),
+    ),
     category: 'components',
   },
   {
@@ -425,7 +424,9 @@ export const tasks: Task[] = [
   {
     id: 'use-previous',
     title: 'Хранение предыдущего значения',
-    component: UsePreviousTask,
+    component: lazy(() =>
+      import('./hooks/use-previous/UsePreviousTask').then(module => ({default: module.UsePreviousTask})),
+    ),
     category: 'hooks',
   },
   {
@@ -522,7 +523,9 @@ export const tasks: Task[] = [
   {
     id: 'mocked-data-list',
     title: 'Список данных через асинхронный мок',
-    component: MockedDataListTask,
+    component: lazy(() =>
+      import('./components/mocked-data-list/MockedDataListTask').then(module => ({default: module.MockedDataListTask})),
+    ),
     category: 'components',
   },
   {
@@ -756,7 +759,9 @@ export const tasks: Task[] = [
   {
     id: 'refactor-41-state-mutation',
     title: 'Рефакторинг 41: Две кнопки: счётчик и имя',
-    component: Refactor41Task,
+    component: lazy(() =>
+      import('./review/refactor-41-state-mutation/Refactor41Task').then(module => ({default: module.App})),
+    ),
     category: 'review',
   },
   {

@@ -8,16 +8,7 @@ const users = [
   {id: 7, name: 'Cael Thas', profession: 'Manager'},
 ]
 
-function UserList() {
-  void users
-
-  return null
-}
-
-export function UserListFilterTask() {
-  return (
-    <div className="task-card">
-      <UserList />
-    </div>
-  )
+// Твоё решение: используй массив users для списка и фильтра.
+export function UserList() {
+  return <div className="task-card">Реализуй список из {users.length} пользователей.</div>
 }

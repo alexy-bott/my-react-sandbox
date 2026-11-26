@@ -1,5 +1,14 @@
 import {useState} from 'react'
-import {usePrevious} from './usePrevious'
+
+// Твоё решение: возвращай предыдущее значение переданного аргумента.
+function usePrevious<T>(state: T): T | undefined {
+  // void временно отмечает аргумент использованным, не сохраняя его.
+  // Замени обе строки своей реализацией.
+  void state
+  return undefined
+}
+
+// Готовый интерфейс: вызывает хук на каждом рендере счётчика.
 
 export function UsePreviousTask() {
   const [count, setCount] = useState(0)

@@ -3,6 +3,6 @@ export type ItemsResponse = {
 }
 
 export function fetchItems(): Promise<ItemsResponse> {
-  // Твой код здесь: асинхронный мок ответа из условия.
+  // Замени временный отклонённый Promise асинхронным моком из условия.
   return Promise.reject(new Error('Мок ещё не реализован'))
 }
