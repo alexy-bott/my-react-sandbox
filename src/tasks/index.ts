@@ -25,18 +25,15 @@ import {UserListAdvancedTask} from './components/user-list-advanced/active'
 import {UseDebounceThrottleEffectTask} from './hooks/use-debounce-throttle-effect/active'
 import {UseCountdownTask} from './hooks/use-countdown/active'
 import {UseIntervalTask} from './hooks/use-interval/active'
-import {UseObjectTask} from './hooks/use-object/active'
 import {EffectLifecycleTask} from './review/effect-lifecycle/active'
 import {ModalTask} from './components/modal/active'
 import {NestedCommentsTask} from './components/nested-comments/active'
 import {QuizTask} from './components/quiz-app/active'
 import {RandomGameBoardTask} from './components/random-game-board/active'
 import {ReactReviewTask} from './review/react-refactoring/active'
-import {StateHistoryTask} from './hooks/state-history/active'
 import {SupplierOffersFilters} from './components/supplier-offers-filters/active'
 import {TimerTask} from './components/timer/active'
 import {TodoTask} from './components/todo/active'
-import {UseArrayTask} from './hooks/use-array/active'
 import {UseBreakpointTask} from './hooks/use-breakpoint/active'
 import {UseClickOutsideTask} from './hooks/use-click-outside/active'
 import {UseCombinedRefTask} from './hooks/use-combined-ref/active'
@@ -48,7 +45,6 @@ import {UseHoverTask} from './hooks/use-hover/active'
 import {UseIsMountedSafeStateTask} from './hooks/use-is-mounted-safe-state/active'
 import {UseKeyPressTask} from './hooks/use-key-press/active'
 import {UseLatestTask} from './hooks/use-latest/active'
-import {UseMapTask} from './hooks/use-map/active'
 import {UseMutationObserverTask} from './hooks/use-mutation-observer/active'
 import {UseQueryParamsStateTask} from './hooks/use-query-params-state/active'
 import {UserSearchCodeReviewTask} from './review/user-search-code-review/active'
@@ -199,7 +195,9 @@ export const tasks: Task[] = [
   {
     id: 'state-history',
     title: 'Состояние с историей изменений',
-    component: StateHistoryTask,
+    component: lazy(() =>
+      import('./hooks/state-history/StateHistoryTask').then(module => ({default: module.StateHistoryTask})),
+    ),
     category: 'hooks',
   },
   {
@@ -353,7 +351,9 @@ export const tasks: Task[] = [
   {
     id: 'use-object',
     title: 'Состояние объекта с объединением',
-    component: UseObjectTask,
+    component: lazy(() =>
+      import('./hooks/use-object/UseObjectTask').then(module => ({default: module.UseObjectTask})),
+    ),
     category: 'hooks',
   },
   {
@@ -405,7 +405,9 @@ export const tasks: Task[] = [
   {
     id: 'use-array',
     title: 'Управление состоянием массива',
-    component: UseArrayTask,
+    component: lazy(() =>
+      import('./hooks/use-array/UseArrayTask').then(module => ({default: module.UseArrayTask})),
+    ),
     category: 'hooks',
   },
   {
@@ -419,7 +421,9 @@ export const tasks: Task[] = [
   {
     id: 'use-map',
     title: 'Управление состоянием Map',
-    component: UseMapTask,
+    component: lazy(() =>
+      import('./hooks/use-map/UseMapTask').then(module => ({default: module.UseMapTask})),
+    ),
     category: 'hooks',
   },
   {

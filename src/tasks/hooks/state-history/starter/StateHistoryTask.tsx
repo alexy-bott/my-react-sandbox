@@ -1,5 +1,20 @@
-import {useStateWithHistory} from './useStateWithHistory'
+// T — тип состояния. Порядок элементов кортежа нужен готовому интерфейсу.
+type StateHistoryTuple<T> = [
+  state: T,
+  setState: (value: T) => void,
+  goBack: () => void,
+  goForward: () => void,
+  history: T[],
+]
 
+function useStateWithHistory<T>(initialState: T): StateHistoryTuple<T> {
+  // void временно отмечает аргумент использованным.
+  // Замени обе строки рабочим кодом.
+  void initialState
+  throw new Error('Реализуй useStateWithHistory')
+}
+
+// Готовый интерфейс проверки использует результат твоего хука.
 export function StateHistoryTask() {
   const [state, setState, goBack, goForward, history] = useStateWithHistory('first')
 

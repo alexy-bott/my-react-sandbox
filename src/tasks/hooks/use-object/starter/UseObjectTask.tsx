@@ -1,5 +1,17 @@
-import {useObject} from './useObject'
+type PlainObject = Record<string, unknown>
+type ObjectUpdate<T extends PlainObject> = Partial<T> | ((current: T) => Partial<T>)
 
+// T описывает объект, а Partial<T> — обновление части его полей.
+function useObject<T extends PlainObject>(
+  initialValue?: T,
+): readonly [T, (update: ObjectUpdate<T>) => void] {
+  // void временно отмечает аргумент использованным.
+  // Замени обе строки реализацией; без аргумента начальное значение — {}.
+  void initialValue
+  throw new Error('Реализуй useObject')
+}
+
+// Готовый интерфейс проверки использует результат твоего хука.
 export function UseObjectTask() {
   const [record, setRecord] = useObject<Record<string, number>>({a: 1, b: 2})
 
@@ -12,7 +24,7 @@ export function UseObjectTask() {
       <button type="button" onClick={() => setRecord((previous) => ({b: previous.b + 1}))}>
         Increase b
       </button>{' '}
-      <button type="button" onClick={() => setRecord(() => ({c: 3}))}>
+      <button type="button" onClick={() => setRecord({c: 3})}>
         Add c
       </button>
     </div>
