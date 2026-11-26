@@ -1,4 +1,4 @@
-name: Sandbox authoring rules and generator verification
+name: Sandbox first hook migration verification
 on:
   push:
     branches: [codex/sandbox-pilot-verification]
@@ -7,70 +7,112 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 55059e2da807e67cf26a61d00c7d63ede3fb7bd4
-          persist-credentials: false
+          ref: 59bef689650fa65d5ba79ad68e7975f4acfb4106
           fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Install project dependencies
+      - name: Install dependencies
         run: |
           npm install --global pnpm@10.26.0
           pnpm install --frozen-lockfile
-      - name: Build and lint guide
-        run: |
-          pnpm build
-          pnpm exec eslint src/tasks/00-sandbox-guide/attempts/current/SandboxGuideTask.tsx src/tasks/00-sandbox-guide/starter/SandboxGuideTask.tsx
-      - name: Check generator interactively in temporary project
+      - name: Build
+        run: pnpm build
+      - name: Lint migrated hooks and registry
+        run: pnpm exec eslint src/tasks/index.ts src/tasks/hooks/use-boolean src/tasks/hooks/use-default src/tasks/hooks/use-first-render src/tasks/hooks/use-state-with-reset src/tasks/hooks/use-step
+      - name: Check source fidelity and local links
         run: |
           python - <<'PY'
-          import os, select, shutil, subprocess, tempfile, time
           from pathlib import Path
-          with tempfile.TemporaryDirectory() as tmp:
-              root=Path(tmp)
-              (root/'scripts').mkdir()
-              shutil.copyfile('scripts/create-task.mjs',root/'scripts/create-task.mjs')
-              categories=['components','hooks','review','js-basics']
-              for category in categories: (root/'src/tasks'/category).mkdir(parents=True)
-              def create(answers):
-                  p=subprocess.Popen(['node',str(root/'scripts/create-task.mjs')],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
-                  output=b''
-                  try:
-                      for answer in answers:
-                          end=time.monotonic()+8
-                          while b'> ' not in output:
-                              remaining=end-time.monotonic()
-                              assert remaining>0 and select.select([p.stdout],[],[],remaining)[0], output
-                              chunk=os.read(p.stdout.fileno(),4096)
-                              assert chunk, output
-                              output+=chunk
-                          output=output.split(b'> ',1)[1]
-                          p.stdin.write((answer+'\n').encode())
-                          p.stdin.flush()
-                      tail,_=p.communicate(timeout=8)
-                      assert p.returncode==0,tail
-                  finally:
-                      if p.poll() is None: p.kill(); p.wait()
-              def check(category,slug,filename):
-                  directory=root/'src/tasks'/category/slug
-                  assert sorted(x.relative_to(directory).as_posix() for x in directory.rglob('*') if x.is_file())==sorted(['task.md',filename,'starter/'+filename])
-                  assert (directory/filename).read_bytes()==(directory/'starter'/filename).read_bytes()==b''
-                  assert ('[{}](./{})'.format(filename,filename)) in (directory/'task.md').read_text()
-              create(['','Проба','','9','2','task.md','HINT.MD','../outside.ts','CON.ts','UseProbe.tsx'])
-              check('hooks','proba','UseProbe.tsx')
-              create(['Проба','2','UseProbe.tsx'])
-              check('hooks','proba-2','UseProbe.tsx')
-              check('hooks','proba','UseProbe.tsx')
-              for number,category,filename in [(1,'components','Example.tsx'),(3,'review','review.md'),(4,'js-basics','timer.js')]:
-                  create(['Example',str(number),filename])
-                  check(category,'example',filename)
-              print('GENERATOR PASS: all categories, invalid inputs, collision, root drafts and identical empty starters')
+          import re, subprocess
+          base='55059e2da807e67cf26a61d00c7d63ede3fb7bd4'
+          cases=[('use-boolean','UseBooleanTask'),('use-default','UseDefaultTask'),('use-first-render','UseFirstRenderTask'),('use-state-with-reset','UseStateWithResetTask'),('use-step','UseStepTask')]
+          for name,comp in cases:
+              root=Path('src/tasks/hooks')/name
+              file=root/(comp+'.tsx')
+              assert file.read_bytes()==(root/'starter'/file.name).read_bytes()
+              assert not (root/'active.ts').exists()
+              assert not (root/'attempts').exists()
+              if (root/'hint.md').exists():
+                  assert (root/'hint.md').read_bytes()==subprocess.check_output(['git','show',base+':'+(root/'hint.md').as_posix()])
+              for target in re.findall(r'\]\((\./[^)]+)\)',(root/'task.md').read_text()):
+                  assert (root/target).exists(),target
+          print('Clean starters, preserved hints, direct links: PASS')
           PY
-      - name: Verify archived and protected files
+      - name: Install browser separately
         run: |
-          git diff --exit-code 8f6c1216fe9e66478945b8fb4788e902f74dbf95 HEAD -- src/tasks/00-sandbox-guide/attempts/2026-08-20 src/tasks/js-basics/timeout-basics src/tasks/index.ts
+          npm install --prefix /tmp/sandbox-browser playwright@1.56.1
+          /tmp/sandbox-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Browser verification
+        run: |
+          pnpm dev --host 127.0.0.1 --port 5173 --strictPort >/tmp/vite.log 2>&1 &
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:5173/ >/dev/null && break; sleep 1; done
+          cat > /tmp/browser-check.mjs <<'JS'
+          import assert from 'node:assert/strict'
+          import {readFile, writeFile} from 'node:fs/promises'
+          import {chromium} from '/tmp/sandbox-browser/node_modules/playwright/index.mjs'
+          
+          const cases=[
+            ['use-boolean','UseBooleanTask','useBoolean','Управление булевым состоянием','disabled'],
+            ['use-default','UseDefaultTask','useDefault','Состояние со значением по умолчанию','User: probe'],
+            ['use-first-render','UseFirstRenderTask','useFirstRender','Определение первого рендера','Контент после первого рендера'],
+            ['use-state-with-reset','UseStateWithResetTask','useStateWithReset','Состояние с функцией сброса','Value: 10'],
+            ['use-step','UseStepTask','useStep','Управление шагами — useStep','Step 2']
+          ]
+          const probes={
+            useBoolean:"return {value:false,setTrue:()=>{},setFalse:()=>{}}",
+            useDefault:"return [ {name:'probe'}, ()=>{} ]",
+            useFirstRender:"return false",
+            useStateWithReset:"return [10,()=>{},()=>{}]",
+            useStep:"return {step:2,next:()=>{},previous:()=>{},reset:()=>{},setStep:()=>{},hasNext:true,hasPrevious:true}"
+          }
+          const base='http://127.0.0.1:5173'
+          const browser=await chromium.launch({headless:true})
+          const page=await browser.newPage()
+          const content=page.locator('.task-content')
+          const nav=page.getByRole('navigation',{name:'Список заданий'})
+          const originals=new Map()
+          const show=async locator=>locator.waitFor({state:'visible',timeout:15000})
+          const select=async name=>nav.getByRole('button',{name,exact:true}).click()
+          const log=name=>console.log('BROWSER RESULT '+name+' PASS')
+          try {
+            await page.goto(base)
+            await show(nav)
+            for(const [id,comp,hook,title,marker] of cases){
+              await select(title)
+              const message=content.getByText('Реализуй '+hook,{exact:true})
+              await show(message)
+              await show(nav)
+              log(id+' starter')
+              const file='src/tasks/hooks/'+id+'/'+comp+'.tsx'
+              const old=await readFile(file,'utf8')
+              originals.set(file,old)
+              const probe=old.replace("throw new Error('Реализуй "+hook+"')",probes[hook])
+              assert.notEqual(probe,old)
+              await writeFile(file,probe)
+              await show(content.getByText(marker,{exact:true}))
+              log(id+' automatic recovery and editable hook connected')
+              await writeFile(file,old)
+              await show(message)
+              log(id+' restored starter')
+            }
+            await select('Реализовать компонент с fetch')
+            await show(content.getByText('Здесь будет UI задания с загрузкой данных.',{exact:true}))
+            log('navigation from failed hook to unrelated task')
+          } finally {
+            for(const [file,source] of originals)await writeFile(file,source)
+            await browser.close()
+          }
+          
+          JS
+          node /tmp/browser-check.mjs
+      - name: Verify restored files
+        if: always()
+        run: |
           git diff --exit-code
+          cat /tmp/vite.log || true
