@@ -1,19 +1,26 @@
 type PlainObject = Record<string, unknown>
 type ObjectUpdate<T extends PlainObject> = Partial<T> | ((current: T) => Partial<T>)
+type ObjectResult<T extends PlainObject> = readonly [T, (update: ObjectUpdate<T>) => void]
 
-// T описывает объект, а Partial<T> — обновление части его полей.
-function useObject<T extends PlainObject>(
-  initialValue?: T,
-): readonly [T, (update: ObjectUpdate<T>) => void] {
-  // void временно отмечает аргумент использованным.
-  // Замени обе строки реализацией; без аргумента начальное значение — {}.
+// Перегрузки описывают два вызова: без аргумента — произвольный объект,
+// с аргументом — объект указанного или выведенного типа.
+function useObject(): ObjectResult<PlainObject>
+function useObject<T extends PlainObject>(initialValue: T): ObjectResult<T>
+function useObject(initialValue: PlainObject = {}): ObjectResult<PlainObject> {
+  // Реализуй только тело этой функции. void временно отмечает аргумент использованным.
   void initialValue
   throw new Error('Реализуй useObject')
 }
 
 // Готовый интерфейс проверки использует результат твоего хука.
+type CounterRecord = {
+  a: number
+  b: number
+  c?: number
+}
+
 export function UseObjectTask() {
-  const [record, setRecord] = useObject<Record<string, number>>({a: 1, b: 2})
+  const [record, setRecord] = useObject<CounterRecord>({a: 1, b: 2})
 
   return (
     <div className="task-card">
