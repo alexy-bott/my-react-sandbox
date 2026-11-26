@@ -1,21 +1,21 @@
 import type {Dispatch, SetStateAction} from 'react'
 
-// Контракт хука: состояние, переключатель и setter.
-// Setter, как в useState, принимает значение или функцию обновления.
+// Контракт: состояние, переключатель и setter из useState.
+// Dispatch<SetStateAction<boolean>> принимает boolean или функцию (prev: boolean) => boolean.
+// readonly запрещает менять элементы кортежа по индексам.
 type ToggleResult = readonly [
   value: boolean,
   toggle: () => void,
   setValue: Dispatch<SetStateAction<boolean>>,
 ]
 
-// Твоё решение: добавь параметр и реализуй хук по условию.
-// throw — временная заглушка: песочница показывает её сообщение вместо UI.
-// Удали эту строку, когда будешь писать реализацию.
+// Твоё решение: добавь defaultValue и реализуй хук по условию.
+// Замени throw своим кодом: пока хук не реализован, песочница показывает сообщение ошибки.
 function useToggle(): ToggleResult {
   throw new Error('Реализуй useToggle в файле UseToggleTask.tsx')
 }
 
-// Готовый интерфейс для проверки: кнопки вызывают функции твоего хука.
+// Готовый интерфейс проверки: использует результат твоего хука.
 export function UseToggleTask() {
   const [value, toggle, setValue] = useToggle()
 
