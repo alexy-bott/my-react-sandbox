@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: b55dbcdf210877c1d3c493949d5e61823d8e81bc
+          ref: 54aa06f6a265741259d5c7dd241874f3e4393fea
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@v4
@@ -87,6 +87,8 @@ jobs:
             useObject<{name:string}>({})
             // @ts-expect-error incorrect update type
             setValue({name:123})
+            // @ts-expect-error explicit undefined is invalid in strict exact-optional mode
+            setValue({name:undefined})
           }
           void useObjectContractChecks
           `
@@ -122,6 +124,17 @@ jobs:
               }
               await writeFile(file,solution)
               compile(file)
+              if (hook==='useObject') {
+                const projectChecks=typeChecks.replace('// @ts-expect-error explicit undefined is invalid in strict exact-optional mode','// Project config permits this; the task explicitly excludes this update.')
+                solution=solution.slice(0,-typeChecks.length)
+                await writeFile(file,solution+projectChecks)
+                execFileSync('pnpm',['exec','tsc','-b','--force'],{stdio:'inherit'})
+                await writeFile(file,solution)
+              } else {
+                execFileSync('pnpm',['exec','tsc','-b','--force'],{stdio:'inherit'})
+              }
+              execFileSync('pnpm',['exec','eslint',file],{stdio:'inherit'})
+              console.log('PROJECT TSC AND SOLUTION ESLINT '+id+' PASS')
               if(hook==='useObject'){
                 await waitPre({a:1,b:2})
                 assert.equal(await content.getByTestId('empty').textContent(),'{}')
@@ -143,6 +156,12 @@ jobs:
                 await waitList([3,4,4])
                 await content.getByRole('button',{name:'Удалить',exact:true}).last().click()
                 await waitList([3,4])
+                await content.getByRole('button',{name:'Удалить',exact:true}).first().click()
+                await waitList([4])
+                await content.getByRole('button',{name:'Удалить',exact:true}).first().click()
+                await waitList([])
+                await click('Добавить')
+                await waitList([1])
               } else if(hook==='useMap'){
                 await mapText(['key: 🆕'])
                 await click('Add')
@@ -158,15 +177,26 @@ jobs:
                 assert.ok(await content.getByRole('button',{name:'Remove "hello"'}).isDisabled())
                 await click('Reset')
                 await page.waitForFunction(()=>!document.querySelector('.task-content pre').textContent.includes(':'))
-                const mapSolution=solution.replace("useMap<string, string>([['key', '🆕']])","useMap<string, string>(new Map([['key', '🆕']]))")
+                const mapSolution=solution.replace("useMap<string, string>([['key', '🆕']])","useMap<string, string>(new Map([['key', '🆕']]))").replace("set(String(Date.now()), '📦')","set('key', 'updated')").replace(/setAll\(\[\s*\['hello', '👋'\],\s*\['data', '📦'\],\s*\]\)/,"setAll(new Map([['only', 'value']]))")
                 assert.notEqual(mapSolution,solution)
                 await writeFile(file,mapSolution)
+                compile(file)
+                execFileSync('pnpm',['exec','tsc','-b','--force'],{stdio:'inherit'})
+                execFileSync('pnpm',['exec','eslint',file],{stdio:'inherit'})
                 await page.reload()
                 await show(nav)
                 await select(title)
                 await mapText(['key: 🆕'])
+                await click('Add')
+                await mapText(['key: updated'])
+                assert.equal(((await content.locator('pre').textContent()).match(/:/g)||[]).length,1)
+                await click('Set new data')
+                await mapText(['only: value'])
+                assert.equal(((await content.locator('pre').textContent()).match(/:/g)||[]).length,1)
+                assert.ok(!(await content.locator('pre').textContent()).includes('key:'))
               } else {
                 await show(content.getByText('Current: first',{exact:true}))
+                await show(content.getByText('History: first',{exact:true}))
                 for(const [label,value] of [['Set second','second'],['Set third','third'],['Back','second'],['Back','first'],['Forward','second'],['Forward','third']]){
                   await click(label)
                   await show(content.getByText('Current: '+value,{exact:true}))
