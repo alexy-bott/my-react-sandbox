@@ -1,4 +1,5 @@
 type PlainObject = Record<string, unknown>
+// Partial<T> позволяет передать только изменяемые поля объекта.
 type ObjectUpdate<T extends PlainObject> = Partial<T> | ((current: T) => Partial<T>)
 type ObjectResult<T extends PlainObject> = readonly [T, (update: ObjectUpdate<T>) => void]
 
