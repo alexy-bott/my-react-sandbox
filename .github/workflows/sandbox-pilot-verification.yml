@@ -1,4 +1,4 @@
-name: Sandbox pilot verification
+name: Sandbox pilot browser verification
 
 on:
   push:
@@ -8,13 +8,13 @@ permissions:
   contents: read
 
 jobs:
-  verify:
+  browser:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          ref: 0d8973dc5b18fa53c7a256881d44c60c8bf4790f
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
@@ -23,22 +23,109 @@ jobs:
         run: |
           npm install --global pnpm@10.26.0
           pnpm install --frozen-lockfile
-      - name: Baseline build
-        continue-on-error: true
+      - name: Install isolated browser test dependencies
         run: |
-          git checkout --detach a9febfd8100e48f65d20f00cc062520c0d81f657
-          pnpm build
-      - name: Baseline lint
-        continue-on-error: true
-        run: pnpm lint
-      - name: Switch to exact pilot commit
-        run: git checkout --detach 0d8973dc5b18fa53c7a256881d44c60c8bf4790f
-      - name: Pilot build
-        run: pnpm build
-      - name: Lint changed TypeScript files
+          npm install --prefix /tmp/sandbox-browser playwright@1.56.1
+          /tmp/sandbox-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Browser verification
+        run: |
+          pnpm dev --host 127.0.0.1 --port 5173 --strictPort > /tmp/vite.log 2>&1 &
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:5173/ >/dev/null && break; sleep 1; done
+          cat > /tmp/browser-check.mjs <<'JS'
+          import assert from 'node:assert/strict'
+          import {readFile, writeFile} from 'node:fs/promises'
+          import {chromium} from '/tmp/sandbox-browser/node_modules/playwright/index.mjs'
+          
+          const file='src/tasks/hooks/use-toggle/UseToggleTask.tsx'
+          const original=await readFile(file,'utf8')
+          const solution=original.replace("import type {Dispatch, SetStateAction} from 'react'", "import {useState, type Dispatch, type SetStateAction} from 'react'").replace(/function useToggle\(\): ToggleResult \{[\s\S]*?\n\}/, 'function useToggle(defaultValue = false): ToggleResult {\n  const [value, setValue] = useState(defaultValue)\n  const toggle = () => setValue(previous => !previous)\n  return [value, toggle, setValue]\n}')
+          assert.notEqual(original,solution)
+          const browser=await chromium.launch({headless:true})
+          const page=await browser.newPage()
+          const base='http://127.0.0.1:5173'
+          const nav=page.getByRole('navigation',{name:'Список заданий'})
+          const task=nav.getByRole('button',{name:'Булево состояние с переключением',exact:true})
+          const other=nav.getByRole('button',{name:'Реализовать компонент с fetch',exact:true})
+          const content=page.locator('.task-content')
+          const status=(value)=>content.getByText('Enabled: '+value,{exact:true})
+          const show=async(locator)=>locator.waitFor({state:'visible',timeout:10000})
+          const log=(name,detail='')=>console.log('BROWSER RESULT '+name+' '+detail)
+          const reload=async()=>{await page.reload();await show(nav)}
+          const recover=async(locator,label)=>{
+            try{await locator.waitFor({state:'visible',timeout:3500});log(label,'automatic');return}
+            catch{log(label,'manual reload needed')}
+            await reload();await show(locator)
+          }
+          try {
+            await page.goto(base)
+            await show(task)
+            await task.click()
+            await show(content.getByText('Реализуй useToggle в файле UseToggleTask.tsx',{exact:true}))
+            await show(nav)
+            log('starter','PASS')
+            await other.click()
+            await show(content.getByText('Здесь будет UI задания с загрузкой данных.',{exact:true}))
+            await task.click()
+            await show(content.getByText('Реализуй useToggle в файле UseToggleTask.tsx',{exact:true}))
+            log('switch from error and back','PASS')
+          
+            const partial=solution.replace('return [value, toggle, setValue]', "throw new Error('Промежуточная реализация')")
+            await writeFile(file,partial)
+            await recover(content.getByText('Промежуточная реализация',{exact:true}),'partial HMR')
+            await show(nav)
+            await writeFile(file,solution)
+            await recover(status('Off'),'solution HMR')
+            await content.getByRole('button',{name:'Toggle',exact:true}).click()
+            await show(status('On'))
+            await content.getByRole('button',{name:'Toggle',exact:true}).click()
+            await show(status('Off'))
+            await content.getByRole('button',{name:'Enable',exact:true}).click()
+            await show(status('On'))
+            await content.getByRole('button',{name:'Disable',exact:true}).click()
+            await show(status('Off'))
+            log('three controls and default false','PASS')
+          
+            const variant=solution.replace('= useToggle()','= useToggle(true)').replace('setValue(false)','setValue(previous => !previous)')
+            await writeFile(file,variant)
+            await reload();await show(status('On'))
+            await content.getByRole('button',{name:'Disable',exact:true}).click()
+            await show(status('Off'))
+            await content.getByRole('button',{name:'Disable',exact:true}).click()
+            await show(status('On'))
+            log('default true and functional setter','PASS')
+          
+            await writeFile(file,solution.replace('return [value, toggle, setValue]','return undefined'))
+            await reload()
+            await show(content.getByText('Задание пока не отображается.',{exact:true}))
+            await show(nav)
+            await other.click()
+            await show(content.getByText('Здесь будет UI задания с загрузкой данных.',{exact:true}))
+            log('invalid return isolation','PASS')
+          
+            await writeFile(file,solution+'\nconst =\n')
+            await page.reload()
+            await show(nav)
+            await task.click()
+            const outcome=await Promise.race([
+              content.getByText('Задание пока не отображается.',{exact:true}).waitFor({state:'visible',timeout:10000}).then(()=> 'boundary').catch(()=>null),
+              page.locator('vite-error-overlay').waitFor({state:'attached',timeout:10000}).then(()=> 'vite overlay').catch(()=>null)
+            ])
+            log('syntax error',String(outcome))
+            await writeFile(file,solution)
+            await recover(status('Off'),'syntax recovery')
+            await writeFile(file,original)
+            await reload()
+            await show(content.getByText('Реализуй useToggle в файле UseToggleTask.tsx',{exact:true}))
+            log('restore original','PASS')
+          } finally {
+            await writeFile(file,original)
+            await browser.close()
+          }
+          
+          JS
+          node /tmp/browser-check.mjs
+      - name: Verify original files restored
         if: always()
-        run: pnpm exec eslint src/App.tsx src/tasks/index.ts src/sandbox/TaskRunner.tsx src/sandbox/TaskErrorBoundary.tsx src/tasks/hooks/use-toggle/UseToggleTask.tsx src/tasks/hooks/use-toggle/starter/UseToggleTask.tsx
-      - name: Pilot full lint
-        if: always()
-        continue-on-error: true
-        run: pnpm lint
+        run: |
+          git diff --exit-code
+          cat /tmp/vite.log || true
