@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: d0e9ac3f902d9939db5b95ec0b7b33c2e8908a11
+          ref: 324eb8c203bbad99d2e13c460bad648c2b1de656
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@v4
@@ -100,6 +100,10 @@ jobs:
             if(hook==='useFocus'){
              source=source.replace("  const [ref, focus] = useFocus<HTMLInputElement>()","  const [ref, focus] = useFocus<HTMLInputElement>()\n  const [visible,setVisible]=useState(true)")
                .replace('<input ref={ref} placeholder="Поле для фокуса" />','{visible && <input ref={ref} placeholder="Поле для фокуса" />}\n      <button type="button" onClick={()=>setVisible(v=>!v)}>Toggle target</button>')
+            }else if(hook==='useLatest'){
+             source=source.replace("  const latestOnChange = useLatest(onChange)","  const latestOnChange = useLatest(onChange)\n  const previous = useRef<typeof latestOnChange | null>(null)\n  const probe = useRef<HTMLInputElement>(null)\n  useLayoutEffect(() => {\n    const node = probe.current\n    if (!node) return\n    node.dataset.latest = String(latestOnChange.current === onChange)\n    node.dataset.stable = String(previous.current === null || previous.current === latestOnChange)\n    previous.current = latestOnChange\n    node.dataset.commits = String(Number(node.dataset.commits ?? '0') + 1)\n  }, [latestOnChange, onChange])")
+               .replace('<input onChange={handler} placeholder="Введите текст" />','<input ref={probe} onChange={handler} placeholder="Введите текст" />')
+             assert.ok(source.includes('node.dataset.stable'))
             }else if(hook==='useHover'){
              source=source.replace("  const [ref, hovered] = useHover<HTMLDivElement>()","  const [ref, hovered] = useHover<HTMLDivElement>()\n  const [visible,setVisible]=useState(true)")
                .replace('<div ref={ref} tabIndex={0}>','<button type="button" onClick={()=>setVisible(v=>!v)}>Toggle target</button>\n      <output>{hovered ? "active" : "inactive"}</output>\n      {visible && <div ref={ref} tabIndex={0}>')
@@ -124,9 +128,19 @@ jobs:
             }else if(hook==='useLatest'){
              const input=content.getByPlaceholder('Введите текст')
              await show(input)
+             await page.waitForFunction(()=>Number(document.querySelector('input[placeholder="Введите текст"]')?.getAttribute('data-commits'))>0)
+             const checkRef=async()=>{
+              assert.equal(await input.getAttribute('data-latest'),'true')
+              assert.equal(await input.getAttribute('data-stable'),'true')
+             }
+             await checkRef()
              await input.fill('abc')
              await show(content.getByText('Первая версия: abc',{exact:true}))
+             const previousCommits=Number(await input.getAttribute('data-commits'))
              await click('Обновить callback')
+             await page.waitForFunction(previous=>Number(document.querySelector('input[placeholder="Введите текст"]')?.getAttribute('data-commits'))>previous,previousCommits)
+             await checkRef()
+             console.log('LAYOUT REF TIMING AND IDENTITY PASS')
              await input.fill('def')
              await show(content.getByText('Новая версия: def',{exact:true}))
              await input.fill('ghi')
@@ -140,12 +154,14 @@ jobs:
              await show(content.getByText('Hovered',{exact:true}))
              await page.mouse.move(0,0)
              await show(content.getByText('Not hovered',{exact:true}))
+             const toggle=content.getByRole('button',{name:'Toggle target'})
+             await toggle.focus()
              await target.hover()
              await show(content.getByText('Hovered',{exact:true}))
              const detached=await target.elementHandle()
              assert.ok(detached)
-             // Trigger the button without moving the mouse away, so no mouseleave can hide a cleanup bug.
-             await content.getByRole('button',{name:'Toggle target'}).evaluate(el=>el.click())
+             // Use the keyboard as described in the student scenario, without moving the mouse.
+             await page.keyboard.press('Space')
              await target.waitFor({state:'detached'})
              await show(content.getByText('inactive',{exact:true}))
              await detached.evaluate(el=>el.dispatchEvent(new MouseEvent('mouseenter')))
