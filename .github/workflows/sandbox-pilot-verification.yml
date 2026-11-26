@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 0d8973dc5b18fa53c7a256881d44c60c8bf4790f
+          ref: 76d77d26afa02d069bf6fb6c7e7cb325c534fe2e
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
@@ -23,6 +23,10 @@ jobs:
         run: |
           npm install --global pnpm@10.26.0
           pnpm install --frozen-lockfile
+      - name: Build and lint candidate
+        run: |
+          pnpm build
+          pnpm exec eslint src/sandbox/TaskErrorBoundary.tsx
       - name: Install isolated browser test dependencies
         run: |
           npm install --prefix /tmp/sandbox-browser playwright@1.56.1
@@ -69,6 +73,7 @@ jobs:
             await show(content.getByText('Реализуй useToggle в файле UseToggleTask.tsx',{exact:true}))
             log('switch from error and back','PASS')
           
+            await page.evaluate(() => { window.__sandboxCheck = 'same page' })
             const partial=solution.replace('return [value, toggle, setValue]', "throw new Error('Промежуточная реализация')")
             await writeFile(file,partial)
             await recover(content.getByText('Промежуточная реализация',{exact:true}),'partial HMR')
@@ -83,6 +88,7 @@ jobs:
             await show(status('On'))
             await content.getByRole('button',{name:'Disable',exact:true}).click()
             await show(status('Off'))
+            assert.equal(await page.evaluate(() => window.__sandboxCheck), 'same page', 'HMR must recover without page reload')
             log('three controls and default false','PASS')
           
             const variant=solution.replace('= useToggle()','= useToggle(true)').replace('setValue(false)','setValue(previous => !previous)')
