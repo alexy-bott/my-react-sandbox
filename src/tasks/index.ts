@@ -1,4 +1,4 @@
-import type {ComponentType} from 'react'
+import {lazy, type ComponentType} from 'react'
 import {SandboxGuideTask} from './00-sandbox-guide/active'
 import {AdaptiveOverflowMenuTask} from './components/adaptive-overflow-menu/active'
 import {BaseFetch} from './components/base-fetch/active'
@@ -25,7 +25,6 @@ import {UserListFilterTask} from './components/user-list-filter/active'
 import {TicTacToeTask} from './components/tic-tac-toe/active'
 import {UserListAdvancedTask} from './components/user-list-advanced/active'
 import {UseDebounceThrottleEffectTask} from './hooks/use-debounce-throttle-effect/active'
-import {UseToggleTask} from './hooks/use-toggle/UseToggleTask'
 import {UseCountdownTask} from './hooks/use-countdown/active'
 import {UseIntervalTask} from './hooks/use-interval/active'
 import {UseObjectTask} from './hooks/use-object/active'
@@ -340,7 +339,9 @@ export const tasks: Task[] = [
   {
     id: 'use-toggle',
     title: 'Булево состояние с переключением',
-    component: UseToggleTask,
+    component: lazy(() =>
+      import('./hooks/use-toggle/UseToggleTask').then(({UseToggleTask}) => ({default: UseToggleTask})),
+    ),
     category: 'hooks',
   },
   {

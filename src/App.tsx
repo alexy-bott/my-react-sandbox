@@ -1,5 +1,6 @@
 import {useEffect, useMemo, useRef, useState} from 'react'
 import './App.css'
+import {TaskRunner} from './sandbox/TaskRunner'
 import {tasks, type Task, type TaskCategory} from './tasks'
 
 const ACTIVE_TASK_STORAGE_KEY = 'active-task-id'
@@ -111,10 +112,10 @@ function App() {
               <code>{activeTask.command}</code>
               {ActiveTaskComponent && <details>
                 <summary>Следующий шаг с проверкой в браузере</summary>
-                <ActiveTaskComponent />
+                <TaskRunner taskId={activeTask.id} component={ActiveTaskComponent} />
               </details>}
             </>
-          ) : ActiveTaskComponent && <ActiveTaskComponent />}
+          ) : ActiveTaskComponent && <TaskRunner taskId={activeTask.id} component={ActiveTaskComponent} />}
         </div>
       </section>
     </main>

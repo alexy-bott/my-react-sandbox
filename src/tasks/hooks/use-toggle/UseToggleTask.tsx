@@ -1,17 +1,23 @@
 import type {Dispatch, SetStateAction} from 'react'
-import {useToggle as useStudentToggle} from './useToggle'
 
-type ToggleResult = readonly [boolean, () => void, Dispatch<SetStateAction<boolean>>]
-const useToggle: (defaultValue?: boolean) => ToggleResult | void = useStudentToggle
+// Контракт хука: состояние, переключатель и setter.
+// Setter, как в useState, принимает значение или функцию обновления.
+type ToggleResult = readonly [
+  value: boolean,
+  toggle: () => void,
+  setValue: Dispatch<SetStateAction<boolean>>,
+]
 
+// Твоё решение: добавь параметр и реализуй хук по условию.
+// throw — временная заглушка: песочница показывает её сообщение вместо UI.
+// Удали эту строку, когда будешь писать реализацию.
+function useToggle(): ToggleResult {
+  throw new Error('Реализуй useToggle в файле UseToggleTask.tsx')
+}
+
+// Готовый интерфейс для проверки: кнопки вызывают функции твоего хука.
 export function UseToggleTask() {
-  const result = useToggle()
-
-  if (result === undefined) {
-    return <p>Реализуй useToggle в файле useToggle.ts. Когда хук вернёт результат, здесь появятся кнопки проверки.</p>
-  }
-
-  const [value, toggle, setValue] = result
+  const [value, toggle, setValue] = useToggle()
 
   return (
     <div className="task-card">
