@@ -31,3 +31,5 @@ export default function useHover<T extends Element>(): [RefCallback<T>, boolean]
   return [customRef, hovering]
 }
 ```
+
+Уточнение автора песочницы: если узел отключён, пока указатель находится над ним, одного удаления обработчиков недостаточно — состояние наведения должно сброситься. В React 19 callback-ref может также возвращать cleanup-функцию. Допустим любой корректный способ очистки, включая обработку `null` у callback-ref без возвращаемой cleanup-функции.

@@ -1,18 +1,23 @@
-import {useState, type ChangeEvent} from 'react'
-import {useLatest} from './useLatest'
+import {useState, type ChangeEvent, type RefObject} from 'react'
 
+// T — тип переданного значения. Ref должен сохранять свою ссылку.
+function useLatest<T>(value: T): RefObject<T> {
+  // void временно отмечает аргумент использованным.
+  // Замени обе строки реализацией.
+  void value
+  throw new Error('Реализуй useLatest')
+}
+
+// Готовый интерфейс проверки использует результат твоего хука.
 type DemoProps = {
   onChange: (value: string) => void
 }
 
 function Demo({onChange}: DemoProps) {
   const latestOnChange = useLatest(onChange)
+  // Обработчик создаётся один раз, а актуальный callback читается при событии.
   const [handler] = useState(() => (event: ChangeEvent<HTMLInputElement>) => {
-    const callback = latestOnChange.current
-
-    if (typeof callback === 'function') {
-      callback(event.target.value)
-    }
+    latestOnChange.current(event.target.value)
   })
 
   return <input onChange={handler} placeholder="Введите текст" />

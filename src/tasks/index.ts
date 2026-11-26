@@ -40,11 +40,8 @@ import {UseCombinedRefTask} from './hooks/use-combined-ref/active'
 import {UseEffectOnceTask} from './hooks/use-effect-once/active'
 import {UseEventListenerTask} from './hooks/use-event-listener/active'
 import {UseFetchTask} from './hooks/use-fetch/active'
-import {UseFocusTask} from './hooks/use-focus/active'
-import {UseHoverTask} from './hooks/use-hover/active'
 import {UseIsMountedSafeStateTask} from './hooks/use-is-mounted-safe-state/active'
 import {UseKeyPressTask} from './hooks/use-key-press/active'
-import {UseLatestTask} from './hooks/use-latest/active'
 import {UseMutationObserverTask} from './hooks/use-mutation-observer/active'
 import {UseQueryParamsStateTask} from './hooks/use-query-params-state/active'
 import {UserSearchCodeReviewTask} from './review/user-search-code-review/active'
@@ -445,7 +442,9 @@ export const tasks: Task[] = [
   {
     id: 'use-latest',
     title: 'Ref с актуальным значением',
-    component: UseLatestTask,
+    component: lazy(() =>
+      import('./hooks/use-latest/UseLatestTask').then(module => ({default: module.UseLatestTask})),
+    ),
     category: 'hooks',
   },
   {
@@ -457,13 +456,17 @@ export const tasks: Task[] = [
   {
     id: 'use-focus',
     title: 'Программная установка фокуса',
-    component: UseFocusTask,
+    component: lazy(() =>
+      import('./hooks/use-focus/UseFocusTask').then(module => ({default: module.UseFocusTask})),
+    ),
     category: 'hooks',
   },
   {
     id: 'use-hover',
     title: 'Отслеживание наведения',
-    component: UseHoverTask,
+    component: lazy(() =>
+      import('./hooks/use-hover/UseHoverTask').then(module => ({default: module.UseHoverTask})),
+    ),
     category: 'hooks',
   },
   {
