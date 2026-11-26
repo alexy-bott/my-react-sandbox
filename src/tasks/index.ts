@@ -111,6 +111,7 @@ import {Refactor45Task} from './refactor-45-disabled-submit/active'
 import {Refactor47Task} from './refactor-47-enter-todos/active'
 import {UserProfileCodeReviewTask} from './user-profile-code-review/active'
 import {ServerUserAutocompleteTask} from './server-user-autocomplete/active'
+import {ProfilePageCodeReviewTask} from './profile-page-code-review/active'
 // task:new imports
 
 export type TaskCategory =
@@ -797,6 +798,12 @@ export const tasks: Task[] = [
     title: 'Autocomplete: серверный поиск пользователей',
     component: ServerUserAutocompleteTask,
     category: 'components',
+  },
+  {
+    id: 'profile-page-code-review',
+    title: 'Ревью и рефакторинг ProfilePage',
+    component: ProfilePageCodeReviewTask,
+    category: 'review',
   },
   // task:new entries
 ]
