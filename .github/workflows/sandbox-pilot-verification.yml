@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 517be20d6133ae29b5df0208dbaeb0bf3796e593
+          ref: 00c0b2b031f683dc2b7f9eacff6c6b2a9f91275f
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@v4
@@ -56,14 +56,16 @@ jobs:
           import assert from 'node:assert/strict'
           import {readFile,writeFile} from 'node:fs/promises'
           import {execFileSync} from 'node:child_process'
+          import {setTimeout as sleep} from 'node:timers/promises'
           import {chromium} from '/tmp/sandbox-browser/node_modules/playwright/index.mjs'
+          
           const cases=[
            ['use-interval','UseIntervalTask','useInterval','Интервальный вызов callback'],
            ['use-countdown','UseCountdownTask','useCountdown','Управление обратным отсчётом']
           ]
           const solutions={
-           useInterval:"const latest=useRef(callback); useEffect(()=>{latest.current=callback},[callback]); useEffect(()=>{if(delay===null)return; const id=window.setInterval(()=>latest.current(),delay); return ()=>window.clearInterval(id)},[delay])",
-           useCountdown:"const {countStart,countStop=0,intervalMs=1000,isIncrement=false}=options; const [count,setCount]=useState(countStart); const [running,setRunning]=useState(false); const start=()=>{if(count!==countStop)setRunning(true)}; const stop=()=>setRunning(false); const reset=()=>{setRunning(false);setCount(countStart)}; useEffect(()=>{if(!running||count===countStop)return;const id=window.setInterval(()=>{const next=count+(isIncrement?1:-1);setCount(next);if(next===countStop)setRunning(false)},intervalMs);return ()=>window.clearInterval(id)},[running,count,countStop,intervalMs,isIncrement]);return {count,start,stop,reset}"
+           useInterval:"const latest=useRef(callback); useLayoutEffect(()=>{latest.current=callback},[callback]); useEffect(()=>{if(delay===null)return;const id=window.setInterval(()=>latest.current(),delay);return ()=>window.clearInterval(id)},[delay])",
+           useCountdown:"const {countStart,countStop=0,intervalMs=1000,isIncrement=false}=options; const [count,setCount]=useState(countStart); const [running,setRunning]=useState(false); const start=()=>{if(count!==countStop)setRunning(true)};const stop=()=>setRunning(false);const reset=()=>{setRunning(false);setCount(countStart)};useEffect(()=>{if(!running||count===countStop)return;const id=window.setInterval(()=>{const next=count+(isIncrement?1:-1);setCount(next);if(next===countStop)setRunning(false)},intervalMs);return ()=>window.clearInterval(id)},[running,count,countStop,intervalMs,isIncrement]);return {count,start,stop,reset}"
           }
           const compile=file=>{
            execFileSync('pnpm',['exec','tsc','--ignoreConfig','--strict','--exactOptionalPropertyTypes','--noEmit','--skipLibCheck','--target','es2023','--module','esnext','--moduleResolution','bundler','--jsx','react-jsx',file],{stdio:'inherit'})
@@ -71,131 +73,178 @@ jobs:
            execFileSync('pnpm',['exec','eslint',file],{stdio:'inherit'})
           }
           const browser=await chromium.launch({headless:true})
-          const page=await browser.newPage()
-          await page.addInitScript(()=>{
-           const timers=new Map()
-           const set=window.setInterval.bind(window)
-           const clear=window.clearInterval.bind(window)
-           window.__sandboxIntervals=timers
-           window.setInterval=(handler,delay,...args)=>{
-            const id=set(handler,delay,...args)
-            if([1000,500,300].includes(delay))timers.set(id,delay)
-            return id
-           }
-           window.clearInterval=id=>{timers.delete(id);return clear(id)}
-          })
-          const content=page.locator('.task-content')
-          const nav=page.getByRole('navigation',{name:'Список заданий'})
-          const show=async locator=>locator.waitFor({state:'visible',timeout:15000})
-          const select=async name=>nav.getByRole('button',{name,exact:true}).click()
-          const click=async name=>content.getByRole('button',{name,exact:true}).click()
-          const log=name=>console.log('BROWSER RESULT '+name+' PASS')
-          const intervals=()=>page.evaluate(()=>[...window.__sandboxIntervals.entries()])
-          const waitTimers=async delays=>page.waitForFunction(delays=>JSON.stringify([...window.__sandboxIntervals.values()].sort())===JSON.stringify([...delays].sort()),delays)
-          const readCount=async prefix=>Number((await content.getByText(new RegExp('^'+prefix+': [0-9]+$')).textContent()).split(': ')[1])
-          const waitCount=async(prefix,value)=>show(content.getByText(prefix+': '+value,{exact:true}))
-          const stable=async(prefix,value,ms)=>{await page.waitForTimeout(ms);assert.equal(await readCount(prefix),value)}
           const originals=new Map()
-          try{
+          const log=name=>console.log('BROWSER RESULT '+name+' PASS')
+          const other='Реализовать компонент с fetch'
+          const otherText='Здесь будет UI задания с загрузкой данных.'
+          const wait=async(check,label,page,advance=false)=>{
+           const deadline=Date.now()+15000
+           let lastError
+           while(Date.now()<deadline){
+            try{if(await check())return}catch(error){lastError=error}
+            if(advance)await page.clock.runFor(16)
+            await sleep(25)
+           }
+           throw new Error('Timed out: '+label+(lastError?' '+lastError.message:''))
+          }
+          const open=async()=>{
+           const page=await browser.newPage()
+           await page.clock.install({time:new Date('2026-01-01T12:00:00Z')})
            await page.goto('http://127.0.0.1:5173')
-           await show(nav)
-           await waitTimers([])
+           const nav=page.getByRole('navigation',{name:'Список заданий'})
+           const content=page.locator('.task-content')
+           await nav.getByRole('button',{name:other,exact:true}).click()
+           await content.getByText(otherText,{exact:true}).waitFor()
+           // Install instrumentation after Clock so tracked IDs belong to the fake timers.
+           await page.clock.pauseAt(new Date(await page.evaluate(()=>Date.now())+1000))
+           await page.evaluate(()=>{
+            const timers=new Map()
+            const set=window.setInterval.bind(window)
+            const clear=window.clearInterval.bind(window)
+            window.__sandboxIntervals=timers
+            window.setInterval=(handler,delay,...args)=>{
+             const id=set(handler,delay,...args)
+             if([1000,500,300].includes(delay))timers.set(id,delay)
+             return id
+            }
+            window.clearInterval=id=>{timers.delete(id);return clear(id)}
+           })
+           const intervals=()=>page.evaluate(()=>[...window.__sandboxIntervals.entries()])
+           const waitTimers=delays=>wait(async()=>JSON.stringify((await intervals()).map(x=>x[1]).sort())===JSON.stringify([...delays].sort()),'active intervals '+delays,page)
+           const show=(locator,advance=false)=>wait(async()=>await locator.count()>0,'visible '+locator.toString(),page,advance)
+           const select=async name=>{
+            const button=nav.getByRole('button',{name,exact:true})
+            await show(button)
+            await button.evaluate(el=>el.click())
+           }
+           const click=async name=>{
+            const button=content.getByRole('button',{name,exact:true})
+            await show(button)
+            await button.evaluate(el=>el.click())
+           }
+           const readCount=async prefix=>Number((await content.getByText(new RegExp('^'+prefix+': [0-9]+$')).textContent({timeout:1000})).split(': ')[1])
+           const waitCount=(prefix,value,advance=false)=>show(content.getByText(prefix+': '+value,{exact:true}),advance)
+           const tick=async(prefix,ms,value,delays)=>{
+            await page.clock.runFor(ms)
+            await waitCount(prefix,value)
+            await waitTimers(delays)
+           }
+           const stable=async(prefix,value,ms)=>{
+            await page.clock.runFor(ms)
+            assert.equal(await readCount(prefix),value)
+            await waitTimers([])
+           }
+           const leave=async()=>{
+            await select(other)
+            await show(content.getByText(otherText,{exact:true}),true)
+            await waitTimers([])
+           }
+           return {page,content,intervals,waitTimers,show,select,click,readCount,waitCount,tick,stable,leave}
+          }
+          try{
            for(const [id,comp,hook,title] of cases){
-            await select(title)
-            const message=content.getByText('Реализуй '+hook,{exact:true})
-            await show(message)
             const file='src/tasks/hooks/'+id+'/'+comp+'.tsx'
             const old=await readFile(file,'utf8')
             originals.set(file,old)
-            const imports=hook==='useInterval'?'useEffect,useRef':'useEffect,useState'
+            const imports=hook==='useInterval'?'useEffect,useLayoutEffect,useRef':'useEffect,useState'
             const source='import {'+imports+'} from "react"\n'+old.replace(/  \/\/ Замени обе строки реализацией\.\n  void [^\n]+\n  throw new Error\('[^']+'\)/,'  '+solutions[hook])
             assert.ok(!source.includes("throw new Error('Реализуй"))
+            let t=await open()
+            await t.select(title)
+            await t.show(t.content.getByText('Реализуй '+hook,{exact:true}),true)
             await writeFile(file,source)
             compile(file)
             if(hook==='useInterval'){
-             await show(content.getByText(/^Count: \d+$/))
-             await click('Пауза')
-             await waitTimers([])
-             const paused=await readCount('Count')
-             await stable('Count',paused,1200)
-             await click('Продолжить')
-             await waitTimers([1000])
-             const initial=(await intervals())[0][0]
-             await waitCount('Count',paused+2)
-             assert.equal((await intervals())[0][0],initial,'callback changes must not recreate interval')
-             await click('Изменить интервал')
-             await show(content.getByText('Интервал: 500 мс',{exact:true}))
-             await waitTimers([500])
-             assert.notEqual((await intervals())[0][0],initial)
-             const fast=await readCount('Count')
-             await waitCount('Count',fast+2)
-             await click('Изменить интервал')
-             await waitTimers([1000])
-             await click('Пауза')
-             await waitTimers([])
-             await click('Продолжить')
-             await waitTimers([1000])
-             await select('Реализовать компонент с fetch')
-             await show(content.getByText('Здесь будет UI задания с загрузкой данных.',{exact:true}))
-             await waitTimers([])
+             await t.show(t.content.getByText(/^Count: \d+$/),true)
+             await t.waitTimers([1000])
+             const initial=(await t.intervals())[0][0]
+             const count=await t.readCount('Count')
+             await t.tick('Count',1000,count+1,[1000])
+             await t.tick('Count',1000,count+2,[1000])
+             assert.equal((await t.intervals())[0][0],initial,'callback changes must not recreate interval')
+             await t.click('Пауза')
+             await t.waitTimers([])
+             await t.stable('Count',count+2,3000)
+             await t.click('Продолжить')
+             await t.waitTimers([1000])
+             const resumed=(await t.intervals())[0][0]
+             await t.tick('Count',1000,count+3,[1000])
+             await t.click('Изменить интервал')
+             await t.show(t.content.getByText('Интервал: 500 мс',{exact:true}))
+             await t.waitTimers([500])
+             assert.notEqual((await t.intervals())[0][0],resumed)
+             await t.tick('Count',500,count+4,[500])
+             await t.tick('Count',500,count+5,[500])
+             await t.click('Изменить интервал')
+             await t.waitTimers([1000])
+             await t.leave()
              log('use-interval callback freshness, cadence, delay, pause and unmount cleanup')
             }else{
-             await waitCount('Countdown',10)
-             await waitTimers([])
-             await stable('Countdown',10,1100)
-             await click('Start')
-             await waitTimers([1000])
-             const first=(await intervals())[0][0]
-             await click('Start')
-             assert.equal((await intervals())[0][0],first)
-             await waitCount('Countdown',9)
-             await click('Stop')
-             await waitTimers([])
-             const stopped=await readCount('Countdown')
-             await stable('Countdown',stopped,1100)
-             await click('Start')
-             await waitCount('Countdown',stopped-1)
-             await click('Reset')
-             await waitCount('Countdown',10)
-             await waitTimers([])
-             await stable('Countdown',10,1100)
-             await click('Start')
-             await waitCount('Countdown',0)
-             await waitTimers([])
-             await click('Start')
-             await stable('Countdown',0,1100)
-             await waitTimers([])
-             const increasing=source.replace('useCountdown({countStart: 10})','useCountdown({countStart: 2, countStop: 5, intervalMs: 300, isIncrement: true})')
-             assert.notEqual(source,increasing)
-             await writeFile(file,increasing)
-             compile(file)
-             await page.reload()
-             await show(nav)
-             await select(title)
-             await waitCount('Countdown',2)
-             await click('Start')
-             await waitTimers([300])
-             await waitCount('Countdown',3)
-             await waitCount('Countdown',5)
-             await waitTimers([])
-             await stable('Countdown',5,500)
-             await click('Reset')
-             await waitCount('Countdown',2)
-             await click('Start')
-             await waitTimers([300])
-             await select('Реализовать компонент с fetch')
-             await show(content.getByText('Здесь будет UI задания с загрузкой данных.',{exact:true}))
-             await waitTimers([])
-             log('use-countdown pause/resume, reset, both directions, boundary and unmount cleanup')
+             await t.waitCount('Countdown',10,true)
+             await t.waitTimers([])
+             await t.stable('Countdown',10,2000)
+             await t.click('Start')
+             await t.waitTimers([1000])
+             const first=(await t.intervals())[0][0]
+             await t.click('Start')
+             await t.waitTimers([1000])
+             assert.equal((await t.intervals())[0][0],first)
+             await t.tick('Countdown',1000,9,[1000])
+             await t.click('Stop')
+             await t.waitTimers([])
+             await t.stable('Countdown',9,2000)
+             await t.click('Start')
+             await t.waitTimers([1000])
+             await t.tick('Countdown',1000,8,[1000])
+             await t.click('Reset')
+             await t.waitCount('Countdown',10)
+             await t.waitTimers([])
+             await t.stable('Countdown',10,2000)
+             await t.click('Start')
+             await t.waitTimers([1000])
+             for(let value=9;value>=0;value--)await t.tick('Countdown',1000,value,value===0?[]:[1000])
+             await t.click('Start')
+             await t.stable('Countdown',0,2000)
+             await t.page.close()
+             for(const [options,initial,expected] of [
+              ['{countStart: 2, countStop: 5, intervalMs: 300, isIncrement: true}',2,[3,4,5]],
+              ['{countStart: 0}',0,[]]
+             ]){
+              const variant=source.replace('{countStart: 10}',options)
+              assert.notEqual(variant,source)
+              await writeFile(file,variant)
+              compile(file)
+              t=await open()
+              await t.select(title)
+              await t.waitCount('Countdown',initial,true)
+              await t.waitTimers([])
+              await t.click('Start')
+              if(expected.length){
+               await t.waitTimers([300])
+               for(const value of expected)await t.tick('Countdown',300,value,value===5?[]:[300])
+               await t.click('Start')
+               await t.stable('Countdown',5,900)
+               await t.click('Reset')
+               await t.waitCount('Countdown',2)
+               await t.click('Start')
+               await t.waitTimers([300])
+               await t.leave()
+              }else{
+               await t.stable('Countdown',0,2000)
+              }
+              await t.page.close()
+             }
+             log('use-countdown pause/resume, reset, each tick in both directions, terminal start and unmount cleanup')
             }
+            await t.page.close()
             await writeFile(file,old)
-            await select(title)
-            await show(message)
-            log(id+' restored starter')
+            t=await open()
+            await t.select(title)
+            await t.show(t.content.getByText('Реализуй '+hook,{exact:true}),true)
+            await t.leave()
+            await t.page.close()
+            log(id+' restored starter and isolated error')
            }
-           await select('Реализовать компонент с fetch')
-           await show(content.getByText('Здесь будет UI задания с загрузкой данных.',{exact:true}))
-           log('navigation from failed hook to unrelated task')
           }finally{
            for(const [file,source] of originals)await writeFile(file,source)
            await browser.close()
