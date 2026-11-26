@@ -1,4 +1,4 @@
-name: Sandbox first hook migration verification
+name: Sandbox collection hook migration verification
 on:
   push:
     branches: [codex/sandbox-pilot-verification]
@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 59bef689650fa65d5ba79ad68e7975f4acfb4106
+          ref: c40bdf0e25ea1f8d98afeffd6bced243653c60af
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@v4
@@ -24,14 +24,14 @@ jobs:
       - name: Build
         run: pnpm build
       - name: Lint migrated hooks and registry
-        run: pnpm exec eslint src/tasks/index.ts src/tasks/hooks/use-boolean src/tasks/hooks/use-default src/tasks/hooks/use-first-render src/tasks/hooks/use-state-with-reset src/tasks/hooks/use-step
+        run: pnpm exec eslint src/tasks/index.ts src/tasks/hooks/use-object src/tasks/hooks/use-array src/tasks/hooks/use-map src/tasks/hooks/state-history
       - name: Check source fidelity and local links
         run: |
           python - <<'PY'
           from pathlib import Path
           import re, subprocess
-          base='55059e2da807e67cf26a61d00c7d63ede3fb7bd4'
-          cases=[('use-boolean','UseBooleanTask'),('use-default','UseDefaultTask'),('use-first-render','UseFirstRenderTask'),('use-state-with-reset','UseStateWithResetTask'),('use-step','UseStepTask')]
+          base='59bef689650fa65d5ba79ad68e7975f4acfb4106'
+          cases=[('use-object','UseObjectTask'),('use-array','UseArrayTask'),('use-map','UseMapTask'),('state-history','StateHistoryTask')]
           for name,comp in cases:
               root=Path('src/tasks/hooks')/name
               file=root/(comp+'.tsx')
@@ -58,18 +58,22 @@ jobs:
           import {chromium} from '/tmp/sandbox-browser/node_modules/playwright/index.mjs'
           
           const cases=[
-            ['use-boolean','UseBooleanTask','useBoolean','Управление булевым состоянием','disabled'],
-            ['use-default','UseDefaultTask','useDefault','Состояние со значением по умолчанию','User: probe'],
-            ['use-first-render','UseFirstRenderTask','useFirstRender','Определение первого рендера','Контент после первого рендера'],
-            ['use-state-with-reset','UseStateWithResetTask','useStateWithReset','Состояние с функцией сброса','Value: 10'],
-            ['use-step','UseStepTask','useStep','Управление шагами — useStep','Step 2']
+            ['use-object','UseObjectTask','useObject','Состояние объекта с объединением','Increase a'],
+            ['use-array','UseArrayTask','useArray','Управление состоянием массива','Добавить'],
+            ['use-map','UseMapTask','useMap','Управление состоянием Map','Set new data'],
+            ['state-history','StateHistoryTask','useStateWithHistory','Состояние с историей изменений','Set second']
           ]
           const probes={
-            useBoolean:"return {value:false,setTrue:()=>{},setFalse:()=>{}}",
-            useDefault:"return [ {name:'probe'}, ()=>{} ]",
-            useFirstRender:"return false",
-            useStateWithReset:"return [10,()=>{},()=>{}]",
-            useStep:"return {step:2,next:()=>{},previous:()=>{},reset:()=>{},setStep:()=>{},hasNext:true,hasPrevious:true}"
+            useObject:"return [{a:11,b:22}, update=>{const patch=typeof update==='function'?update({a:11,b:22}):update; document.body.dataset.probe=JSON.stringify(patch)}]",
+            useArray:"return {value:[11,22,33],push:item=>{document.body.dataset.probe=String(item)},removeByIndex:index=>{document.body.dataset.probe=String(index)}}",
+            useMap:"return {map:new Map([['hello','probe']]),set:(k,v)=>{document.body.dataset.probe=v},setAll:entries=>{document.body.dataset.probe=JSON.stringify(entries)},remove:key=>{document.body.dataset.probe=key},reset:()=>{document.body.dataset.probe='reset'}}",
+            useStateWithHistory:"return ['probe',value=>{document.body.dataset.probe=value},()=>{document.body.dataset.probe='back'},()=>{document.body.dataset.probe='forward'},['first','probe']]"
+          }
+          const actions={
+            useObject:[['Increase a','{"a":12}'],['Increase b','{"b":23}'],['Add c','{"c":3}']],
+            useArray:[['Добавить','4'],['Удалить','0']],
+            useMap:[['Add','📦'],['Set new data','[["hello","👋"],["data","📦"]]'],['Remove "hello"','hello'],['Reset','reset']],
+            useStateWithHistory:[['Set second','second'],['Set third','third'],['Back','back'],['Forward','forward']]
           }
           const base='http://127.0.0.1:5173'
           const browser=await chromium.launch({headless:true})
@@ -95,8 +99,12 @@ jobs:
               const probe=old.replace("throw new Error('Реализуй "+hook+"')",probes[hook])
               assert.notEqual(probe,old)
               await writeFile(file,probe)
-              await show(content.getByText(marker,{exact:true}))
-              log(id+' automatic recovery and editable hook connected')
+              await show(content.getByRole('button',{name:marker,exact:true}))
+              for (const [label,expected] of actions[hook]) {
+                await content.getByRole('button',{name:label,exact:true}).first().click()
+                assert.equal(await page.locator('body').getAttribute('data-probe'),expected)
+              }
+              log(id+' automatic recovery and all consumer callbacks connected')
               await writeFile(file,old)
               await show(message)
               log(id+' restored starter')
