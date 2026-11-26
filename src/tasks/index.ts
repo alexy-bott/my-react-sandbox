@@ -109,6 +109,8 @@ import {Refactor43Task} from './refactor-43-child-render/active'
 import {Refactor44Task} from './refactor-44-game-effects/active'
 import {Refactor45Task} from './refactor-45-disabled-submit/active'
 import {Refactor47Task} from './refactor-47-enter-todos/active'
+import {UserProfileCodeReviewTask} from './user-profile-code-review/active'
+import {ServerUserAutocompleteTask} from './server-user-autocomplete/active'
 // task:new imports
 
 export type TaskCategory =
@@ -783,6 +785,18 @@ export const tasks: Task[] = [
     title: 'Рефакторинг 47: Добавление задач через Enter и кнопку',
     component: Refactor47Task,
     category: 'review',
+  },
+  {
+    id: 'user-profile-code-review',
+    title: 'Ревью компонента UserProfile',
+    component: UserProfileCodeReviewTask,
+    category: 'review',
+  },
+  {
+    id: 'server-user-autocomplete',
+    title: 'Autocomplete: серверный поиск пользователей',
+    component: ServerUserAutocompleteTask,
+    category: 'components',
   },
   // task:new entries
 ]
