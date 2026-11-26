@@ -1,4 +1,4 @@
-name: Sandbox ref hook migration verification
+name: Sandbox timer hook migration verification
 on:
   push:
     branches: [codex/sandbox-pilot-verification]
@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 324eb8c203bbad99d2e13c460bad648c2b1de656
+          ref: 517be20d6133ae29b5df0208dbaeb0bf3796e593
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@v4
@@ -24,14 +24,14 @@ jobs:
       - name: Build
         run: pnpm build
       - name: Lint migrated hooks and registry
-        run: pnpm exec eslint src/tasks/index.ts src/tasks/hooks/use-focus src/tasks/hooks/use-latest src/tasks/hooks/use-hover
+        run: pnpm exec eslint src/tasks/index.ts src/tasks/hooks/use-interval src/tasks/hooks/use-countdown
       - name: Check source fidelity and local links
         run: |
           python - <<'PY'
           from pathlib import Path
           import re, subprocess
-          base='54aa06f6a265741259d5c7dd241874f3e4393fea'
-          cases=[('use-focus','UseFocusTask'),('use-latest','UseLatestTask'),('use-hover','UseHoverTask')]
+          base='324eb8c203bbad99d2e13c460bad648c2b1de656'
+          cases=[('use-interval','UseIntervalTask'),('use-countdown','UseCountdownTask')]
           for name,comp in cases:
               root=Path('src/tasks/hooks')/name
               file=root/(comp+'.tsx')
@@ -57,18 +57,14 @@ jobs:
           import {readFile,writeFile} from 'node:fs/promises'
           import {execFileSync} from 'node:child_process'
           import {chromium} from '/tmp/sandbox-browser/node_modules/playwright/index.mjs'
-          
           const cases=[
-           ['use-focus','UseFocusTask','useFocus','Программная установка фокуса'],
-           ['use-latest','UseLatestTask','useLatest','Ref с актуальным значением'],
-           ['use-hover','UseHoverTask','useHover','Отслеживание наведения']
+           ['use-interval','UseIntervalTask','useInterval','Интервальный вызов callback'],
+           ['use-countdown','UseCountdownTask','useCountdown','Управление обратным отсчётом']
           ]
           const solutions={
-           useFocus:"const ref=useRef<T>(null); const focus=useCallback(()=>ref.current?.focus(),[]); return [ref,focus]",
-           useLatest:"const ref=useRef(value); useLayoutEffect(()=>{ref.current=value},[value]); return ref",
-           useHover:"const [hovered,setHovered]=useState(false); const ref=useCallback((node:T|null)=>{if(!node)return; const enter=()=>setHovered(true);const leave=()=>setHovered(false);node.addEventListener('mouseenter',enter);node.addEventListener('mouseleave',leave);return ()=>{node.removeEventListener('mouseenter',enter);node.removeEventListener('mouseleave',leave);setHovered(false)}},[]);return [ref,hovered]"
+           useInterval:"const latest=useRef(callback); useEffect(()=>{latest.current=callback},[callback]); useEffect(()=>{if(delay===null)return; const id=window.setInterval(()=>latest.current(),delay); return ()=>window.clearInterval(id)},[delay])",
+           useCountdown:"const {countStart,countStop=0,intervalMs=1000,isIncrement=false}=options; const [count,setCount]=useState(countStart); const [running,setRunning]=useState(false); const start=()=>{if(count!==countStop)setRunning(true)}; const stop=()=>setRunning(false); const reset=()=>{setRunning(false);setCount(countStart)}; useEffect(()=>{if(!running||count===countStop)return;const id=window.setInterval(()=>{const next=count+(isIncrement?1:-1);setCount(next);if(next===countStop)setRunning(false)},intervalMs);return ()=>window.clearInterval(id)},[running,count,countStop,intervalMs,isIncrement]);return {count,start,stop,reset}"
           }
-          const imports={useFocus:"useRef,useCallback,useState",useLatest:"useRef,useLayoutEffect",useHover:"useState,useCallback"}
           const compile=file=>{
            execFileSync('pnpm',['exec','tsc','--ignoreConfig','--strict','--exactOptionalPropertyTypes','--noEmit','--skipLibCheck','--target','es2023','--module','esnext','--moduleResolution','bundler','--jsx','react-jsx',file],{stdio:'inherit'})
            execFileSync('pnpm',['exec','tsc','-b','--force'],{stdio:'inherit'})
@@ -76,18 +72,34 @@ jobs:
           }
           const browser=await chromium.launch({headless:true})
           const page=await browser.newPage()
-          const errors=[]
-          page.on('pageerror',error=>errors.push(error.message))
+          await page.addInitScript(()=>{
+           const timers=new Map()
+           const set=window.setInterval.bind(window)
+           const clear=window.clearInterval.bind(window)
+           window.__sandboxIntervals=timers
+           window.setInterval=(handler,delay,...args)=>{
+            const id=set(handler,delay,...args)
+            if([1000,500,300].includes(delay))timers.set(id,delay)
+            return id
+           }
+           window.clearInterval=id=>{timers.delete(id);return clear(id)}
+          })
           const content=page.locator('.task-content')
           const nav=page.getByRole('navigation',{name:'Список заданий'})
-          const originals=new Map()
           const show=async locator=>locator.waitFor({state:'visible',timeout:15000})
           const select=async name=>nav.getByRole('button',{name,exact:true}).click()
           const click=async name=>content.getByRole('button',{name,exact:true}).click()
           const log=name=>console.log('BROWSER RESULT '+name+' PASS')
+          const intervals=()=>page.evaluate(()=>[...window.__sandboxIntervals.entries()])
+          const waitTimers=async delays=>page.waitForFunction(delays=>JSON.stringify([...window.__sandboxIntervals.values()].sort())===JSON.stringify([...delays].sort()),delays)
+          const readCount=async prefix=>Number((await content.getByText(new RegExp('^'+prefix+': [0-9]+$')).textContent()).split(': ')[1])
+          const waitCount=async(prefix,value)=>show(content.getByText(prefix+': '+value,{exact:true}))
+          const stable=async(prefix,value,ms)=>{await page.waitForTimeout(ms);assert.equal(await readCount(prefix),value)}
+          const originals=new Map()
           try{
            await page.goto('http://127.0.0.1:5173')
            await show(nav)
+           await waitTimers([])
            for(const [id,comp,hook,title] of cases){
             await select(title)
             const message=content.getByText('Реализуй '+hook,{exact:true})
@@ -95,88 +107,89 @@ jobs:
             const file='src/tasks/hooks/'+id+'/'+comp+'.tsx'
             const old=await readFile(file,'utf8')
             originals.set(file,old)
-            let source='import {'+imports[hook]+'} from "react"\n'+old.replace("throw new Error('Реализуй "+hook+"')",solutions[hook])
-            assert.notEqual(source,old)
-            if(hook==='useFocus'){
-             source=source.replace("  const [ref, focus] = useFocus<HTMLInputElement>()","  const [ref, focus] = useFocus<HTMLInputElement>()\n  const [visible,setVisible]=useState(true)")
-               .replace('<input ref={ref} placeholder="Поле для фокуса" />','{visible && <input ref={ref} placeholder="Поле для фокуса" />}\n      <button type="button" onClick={()=>setVisible(v=>!v)}>Toggle target</button>')
-            }else if(hook==='useLatest'){
-             source=source.replace("  const latestOnChange = useLatest(onChange)","  const latestOnChange = useLatest(onChange)\n  const previous = useRef<typeof latestOnChange | null>(null)\n  const probe = useRef<HTMLInputElement>(null)\n  useLayoutEffect(() => {\n    const node = probe.current\n    if (!node) return\n    node.dataset.latest = String(latestOnChange.current === onChange)\n    node.dataset.stable = String(previous.current === null || previous.current === latestOnChange)\n    previous.current = latestOnChange\n    node.dataset.commits = String(Number(node.dataset.commits ?? '0') + 1)\n  }, [latestOnChange, onChange])")
-               .replace('<input onChange={handler} placeholder="Введите текст" />','<input ref={probe} onChange={handler} placeholder="Введите текст" />')
-             assert.ok(source.includes('node.dataset.stable'))
-            }else if(hook==='useHover'){
-             source=source.replace("  const [ref, hovered] = useHover<HTMLDivElement>()","  const [ref, hovered] = useHover<HTMLDivElement>()\n  const [visible,setVisible]=useState(true)")
-               .replace('<div ref={ref} tabIndex={0}>','<button type="button" onClick={()=>setVisible(v=>!v)}>Toggle target</button>\n      <output>{hovered ? "active" : "inactive"}</output>\n      {visible && <div ref={ref} tabIndex={0}>')
-               .replace("{hovered ? 'Hovered' : 'Not hovered'}\n      </div>","{hovered ? 'Hovered' : 'Not hovered'}\n      </div>}")
-            }
+            const imports=hook==='useInterval'?'useEffect,useRef':'useEffect,useState'
+            const source='import {'+imports+'} from "react"\n'+old.replace(/  \/\/ Замени обе строки реализацией\.\n  void [^\n]+\n  throw new Error\('[^']+'\)/,'  '+solutions[hook])
+            assert.ok(!source.includes("throw new Error('Реализуй"))
             await writeFile(file,source)
             compile(file)
-            if(hook==='useFocus'){
-             const input=content.getByPlaceholder('Поле для фокуса')
-             await show(input)
-             const n=errors.length
-             await click('Установить фокус')
-             assert.equal(await input.evaluate(el=>document.activeElement===el),true)
-             await click('Toggle target')
-             await input.waitFor({state:'detached'})
-             await click('Установить фокус')
-             assert.equal(errors.length,n)
-             await click('Toggle target')
-             await show(input)
-             await click('Установить фокус')
-             assert.equal(await input.evaluate(el=>document.activeElement===el),true)
-            }else if(hook==='useLatest'){
-             const input=content.getByPlaceholder('Введите текст')
-             await show(input)
-             await page.waitForFunction(()=>Number(document.querySelector('input[placeholder="Введите текст"]')?.getAttribute('data-commits'))>0)
-             const checkRef=async()=>{
-              assert.equal(await input.getAttribute('data-latest'),'true')
-              assert.equal(await input.getAttribute('data-stable'),'true')
-             }
-             await checkRef()
-             await input.fill('abc')
-             await show(content.getByText('Первая версия: abc',{exact:true}))
-             const previousCommits=Number(await input.getAttribute('data-commits'))
-             await click('Обновить callback')
-             await page.waitForFunction(previous=>Number(document.querySelector('input[placeholder="Введите текст"]')?.getAttribute('data-commits'))>previous,previousCommits)
-             await checkRef()
-             console.log('LAYOUT REF TIMING AND IDENTITY PASS')
-             await input.fill('def')
-             await show(content.getByText('Новая версия: def',{exact:true}))
-             await input.fill('ghi')
-             await show(content.getByText('Новая версия: ghi',{exact:true}))
+            if(hook==='useInterval'){
+             await show(content.getByText(/^Count: \d+$/))
+             await click('Пауза')
+             await waitTimers([])
+             const paused=await readCount('Count')
+             await stable('Count',paused,1200)
+             await click('Продолжить')
+             await waitTimers([1000])
+             const initial=(await intervals())[0][0]
+             await waitCount('Count',paused+2)
+             assert.equal((await intervals())[0][0],initial,'callback changes must not recreate interval')
+             await click('Изменить интервал')
+             await show(content.getByText('Интервал: 500 мс',{exact:true}))
+             await waitTimers([500])
+             assert.notEqual((await intervals())[0][0],initial)
+             const fast=await readCount('Count')
+             await waitCount('Count',fast+2)
+             await click('Изменить интервал')
+             await waitTimers([1000])
+             await click('Пауза')
+             await waitTimers([])
+             await click('Продолжить')
+             await waitTimers([1000])
+             await select('Реализовать компонент с fetch')
+             await show(content.getByText('Здесь будет UI задания с загрузкой данных.',{exact:true}))
+             await waitTimers([])
+             log('use-interval callback freshness, cadence, delay, pause and unmount cleanup')
             }else{
-             const target=content.locator('div[tabindex="0"]')
-             await show(target)
-             await page.mouse.move(0,0)
-             await show(content.getByText('Not hovered',{exact:true}))
-             await target.hover()
-             await show(content.getByText('Hovered',{exact:true}))
-             await page.mouse.move(0,0)
-             await show(content.getByText('Not hovered',{exact:true}))
-             const toggle=content.getByRole('button',{name:'Toggle target'})
-             await toggle.focus()
-             await target.hover()
-             await show(content.getByText('Hovered',{exact:true}))
-             const detached=await target.elementHandle()
-             assert.ok(detached)
-             // Use the keyboard as described in the student scenario, without moving the mouse.
-             await page.keyboard.press('Space')
-             await target.waitFor({state:'detached'})
-             await show(content.getByText('inactive',{exact:true}))
-             await detached.evaluate(el=>el.dispatchEvent(new MouseEvent('mouseenter')))
-             await page.waitForTimeout(100)
-             await show(content.getByText('inactive',{exact:true}))
-             await page.mouse.move(0,0)
-             await click('Toggle target')
-             await show(target)
-             await target.hover()
-             await show(content.getByText('Hovered',{exact:true}))
-             await page.mouse.move(0,0)
-             await show(content.getByText('Not hovered',{exact:true}))
+             await waitCount('Countdown',10)
+             await waitTimers([])
+             await stable('Countdown',10,1100)
+             await click('Start')
+             await waitTimers([1000])
+             const first=(await intervals())[0][0]
+             await click('Start')
+             assert.equal((await intervals())[0][0],first)
+             await waitCount('Countdown',9)
+             await click('Stop')
+             await waitTimers([])
+             const stopped=await readCount('Countdown')
+             await stable('Countdown',stopped,1100)
+             await click('Start')
+             await waitCount('Countdown',stopped-1)
+             await click('Reset')
+             await waitCount('Countdown',10)
+             await waitTimers([])
+             await stable('Countdown',10,1100)
+             await click('Start')
+             await waitCount('Countdown',0)
+             await waitTimers([])
+             await click('Start')
+             await stable('Countdown',0,1100)
+             await waitTimers([])
+             const increasing=source.replace('useCountdown({countStart: 10})','useCountdown({countStart: 2, countStop: 5, intervalMs: 300, isIncrement: true})')
+             assert.notEqual(source,increasing)
+             await writeFile(file,increasing)
+             compile(file)
+             await page.reload()
+             await show(nav)
+             await select(title)
+             await waitCount('Countdown',2)
+             await click('Start')
+             await waitTimers([300])
+             await waitCount('Countdown',3)
+             await waitCount('Countdown',5)
+             await waitTimers([])
+             await stable('Countdown',5,500)
+             await click('Reset')
+             await waitCount('Countdown',2)
+             await click('Start')
+             await waitTimers([300])
+             await select('Реализовать компонент с fetch')
+             await show(content.getByText('Здесь будет UI задания с загрузкой данных.',{exact:true}))
+             await waitTimers([])
+             log('use-countdown pause/resume, reset, both directions, boundary and unmount cleanup')
             }
-            log(id+' strict/project compilation, solution ESLint and behavior')
             await writeFile(file,old)
+            await select(title)
             await show(message)
             log(id+' restored starter')
            }
