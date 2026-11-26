@@ -160,7 +160,7 @@ jobs:
               "  const invalid: Result = 'mobile'",
               '  // @ts-expect-error thresholds must be numbers',
               "  const invalidConfig = createBreakpoint({small: 0, large: '1440'})",
-              '  void [compact, cinema, exact, invalid, invalidConfig]',
+              '  void [useCustom, compact, cinema, exact, invalid, invalidConfig]',
               '}',
               'void verifyBreakpointTypes',
               ''
