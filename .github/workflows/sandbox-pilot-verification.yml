@@ -115,14 +115,17 @@ jobs:
             await show(content.getByText('Здесь будет UI задания с загрузкой данных.',{exact:true}))
             log('invalid return isolation','PASS')
           
-            await writeFile(file,solution+'\nconst =\n')
-            await page.reload()
-            await show(nav)
+            // Select the valid task before introducing a syntax error.
+            await writeFile(file,solution)
+            await reload()
             await task.click()
+            await show(status('Off'))
+            await writeFile(file,solution+'\nconst =\n')
             const outcome=await Promise.race([
               content.getByText('Задание пока не отображается.',{exact:true}).waitFor({state:'visible',timeout:10000}).then(()=> 'boundary').catch(()=>null),
               page.locator('vite-error-overlay').waitFor({state:'attached',timeout:10000}).then(()=> 'vite overlay').catch(()=>null)
             ])
+            assert.ok(outcome, 'Syntax failure must show a diagnostic')
             log('syntax error',String(outcome))
             await writeFile(file,solution)
             await recover(status('Off'),'syntax recovery')
