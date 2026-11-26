@@ -37,15 +37,12 @@ import {SupplierOffersFilters} from './components/supplier-offers-filters/active
 import {TimerTask} from './components/timer/active'
 import {TodoTask} from './components/todo/active'
 import {UseArrayTask} from './hooks/use-array/active'
-import {UseBooleanTask} from './hooks/use-boolean/active'
 import {UseBreakpointTask} from './hooks/use-breakpoint/active'
 import {UseClickOutsideTask} from './hooks/use-click-outside/active'
 import {UseCombinedRefTask} from './hooks/use-combined-ref/active'
-import {UseDefaultTask} from './hooks/use-default/active'
 import {UseEffectOnceTask} from './hooks/use-effect-once/active'
 import {UseEventListenerTask} from './hooks/use-event-listener/active'
 import {UseFetchTask} from './hooks/use-fetch/active'
-import {UseFirstRenderTask} from './hooks/use-first-render/active'
 import {UseFocusTask} from './hooks/use-focus/active'
 import {UseHoverTask} from './hooks/use-hover/active'
 import {UseIsMountedSafeStateTask} from './hooks/use-is-mounted-safe-state/active'
@@ -54,14 +51,12 @@ import {UseLatestTask} from './hooks/use-latest/active'
 import {UseMapTask} from './hooks/use-map/active'
 import {UseMutationObserverTask} from './hooks/use-mutation-observer/active'
 import {UseQueryParamsStateTask} from './hooks/use-query-params-state/active'
-import {UseStateWithResetTask} from './hooks/use-state-with-reset/active'
 import {UserSearchCodeReviewTask} from './review/user-search-code-review/active'
 import {UseMinMatchMediaTask} from './hooks/use-min-match-media/active'
 import {UsersPageProductionReviewTask} from './review/users-page-production-review/active'
 import {MultistepRegistrationFormTask} from './components/multistep-registration-form/active'
 import {TimeoutBasicsTask} from './js-basics/timeout-basics/active'
 import {MemoryGameTask} from './components/memory-game/active'
-import {UseStepTask} from './hooks/use-step/active'
 import {UseThrottleTask} from './hooks/use-throttle/active'
 import {ServerDateReviewTask} from './review/server-date-review/active'
 import {Refactor02Task} from './review/refactor-02-buggy-todo/active'
@@ -376,7 +371,9 @@ export const tasks: Task[] = [
   {
     id: 'use-default',
     title: 'Состояние со значением по умолчанию',
-    component: UseDefaultTask,
+    component: lazy(() =>
+      import('./hooks/use-default/UseDefaultTask').then(module => ({default: module.UseDefaultTask})),
+    ),
     category: 'hooks',
   },
   {
@@ -400,7 +397,9 @@ export const tasks: Task[] = [
   {
     id: 'use-boolean',
     title: 'Управление булевым состоянием',
-    component: UseBooleanTask,
+    component: lazy(() =>
+      import('./hooks/use-boolean/UseBooleanTask').then(module => ({default: module.UseBooleanTask})),
+    ),
     category: 'hooks',
   },
   {
@@ -412,7 +411,9 @@ export const tasks: Task[] = [
   {
     id: 'use-state-with-reset',
     title: 'Состояние с функцией сброса',
-    component: UseStateWithResetTask,
+    component: lazy(() =>
+      import('./hooks/use-state-with-reset/UseStateWithResetTask').then(module => ({default: module.UseStateWithResetTask})),
+    ),
     category: 'hooks',
   },
   {
@@ -432,7 +433,9 @@ export const tasks: Task[] = [
   {
     id: 'use-first-render',
     title: 'Определение первого рендера',
-    component: UseFirstRenderTask,
+    component: lazy(() =>
+      import('./hooks/use-first-render/UseFirstRenderTask').then(module => ({default: module.UseFirstRenderTask})),
+    ),
     category: 'hooks',
   },
   {
@@ -537,7 +540,9 @@ export const tasks: Task[] = [
   {
     id: 'use-step',
     title: 'Управление шагами — useStep',
-    component: UseStepTask,
+    component: lazy(() =>
+      import('./hooks/use-step/UseStepTask').then(module => ({default: module.UseStepTask})),
+    ),
     category: 'hooks',
   },
   {

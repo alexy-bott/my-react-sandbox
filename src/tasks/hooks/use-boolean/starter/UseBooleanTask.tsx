@@ -1,5 +1,18 @@
-import {useBoolean} from './useBoolean'
+type UseBooleanReturn = {
+  value: boolean
+  setTrue: () => void
+  setFalse: () => void
+}
 
+// Твоё решение: реализуй состояние и методы по условию.
+function useBoolean(initialValue = false): UseBooleanReturn {
+  // void временно отмечает аргумент использованным.
+  // Замени обе строки реализацией: throw показывает сообщение вместо интерфейса.
+  void initialValue
+  throw new Error('Реализуй useBoolean')
+}
+
+// Готовый интерфейс проверки использует результат твоего хука.
 export function UseBooleanTask() {
   const {value, setTrue, setFalse} = useBoolean()
 

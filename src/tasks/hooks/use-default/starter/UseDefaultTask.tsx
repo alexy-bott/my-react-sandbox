@@ -1,5 +1,18 @@
-import {useDefault} from './useDefault'
+import type {Dispatch, SetStateAction} from 'react'
 
+// T — тип значения. Setter принимает значение или функцию обновления,
+// в том числе null и undefined. Возвращаемый кортеж нужен готовому интерфейсу.
+function useDefault<T>(
+  defaultValue: T,
+  initialValue: T | (() => T),
+): readonly [T, Dispatch<SetStateAction<T | null | undefined>>] {
+  // void временно отмечает аргументы использованными.
+  // Замени заглушку своей реализацией и при желании выведи тип самостоятельно.
+  void [defaultValue, initialValue]
+  throw new Error('Реализуй useDefault')
+}
+
+// Готовый интерфейс проверки использует результат твоего хука.
 type User = {
   name: string
 }

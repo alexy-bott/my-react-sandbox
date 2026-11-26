@@ -1,6 +1,11 @@
 import {useState, type PropsWithChildren} from 'react'
-import {useFirstRender} from './useFirstRender'
 
+// Твоё решение: вместо временного исключения реализуй проверку первого рендера.
+function useFirstRender(): boolean {
+  throw new Error('Реализуй useFirstRender')
+}
+
+// Готовый интерфейс: проверяет результат хука при рендерах.
 function RenderAfterFirstRender({children}: PropsWithChildren) {
   const isFirstRender = useFirstRender()
 
