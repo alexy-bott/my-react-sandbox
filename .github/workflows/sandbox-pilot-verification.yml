@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 3a91b5d075d10599c797b1ca2963397bc5816723
+          ref: 843e1f1bc036d54bc7ef558582871bde261ade26
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@v4
@@ -148,6 +148,27 @@ jobs:
             log(id+' HMR recovery')
             compile(file)
             if(hook==='createBreakpoint'){
+             const typeChecks=[
+              '',
+              'function verifyBreakpointTypes() {',
+              '  const useCustom = createBreakpoint({compact: 0, cinema: 1440})',
+              '  type Result = ReturnType<typeof useCustom>',
+              "  const compact: Result = 'compact'",
+              "  const cinema: Result = 'cinema'",
+              "  const exact: [Result] extends ['compact' | 'cinema'] ? true : false = true",
+              '  // @ts-expect-error unrelated names are not valid results',
+              "  const invalid: Result = 'mobile'",
+              '  // @ts-expect-error thresholds must be numbers',
+              "  const invalidConfig = createBreakpoint({small: 0, large: '1440'})",
+              '  void [compact, cinema, exact, invalid, invalidConfig]',
+              '}',
+              'void verifyBreakpointTypes',
+              ''
+             ].join('\n')
+             await writeFile(file,source+typeChecks)
+             compile(file)
+             await writeFile(file,source)
+             log(id+' exact inferred generic union and invalid type rejection')
              const verify=async()=>{
               const t=await open(767,800)
               await t.select(title)
