@@ -1,144 +1,76 @@
-name: Sandbox second pilot verification
-
+name: Sandbox authoring rules and generator verification
 on:
   push:
     branches: [codex/sandbox-pilot-verification]
-
 permissions:
   contents: read
-
 jobs:
   verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 8f6c1216fe9e66478945b8fb4788e902f74dbf95
+          ref: 55059e2da807e67cf26a61d00c7d63ede3fb7bd4
           persist-credentials: false
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Install locked dependencies
+      - name: Install project dependencies
         run: |
           npm install --global pnpm@10.26.0
           pnpm install --frozen-lockfile
-      - name: Build second pilot
-        run: pnpm build
-      - name: Lint ordinary exercise files and registry
-        run: pnpm exec eslint src/tasks/index.ts src/tasks/hooks/use-previous src/tasks/components/user-list-filter src/tasks/components/base-fetch src/tasks/components/mocked-data-list
-      - name: Report full lint including deliberate review defects
-        continue-on-error: true
-        run: pnpm lint
-      - name: Verify clean starters and preserved source
+      - name: Build and lint guide
+        run: |
+          pnpm build
+          pnpm exec eslint src/tasks/00-sandbox-guide/attempts/current/SandboxGuideTask.tsx src/tasks/00-sandbox-guide/starter/SandboxGuideTask.tsx
+      - name: Check generator interactively in temporary project
         run: |
           python - <<'PY'
+          import os, select, shutil, subprocess, tempfile, time
           from pathlib import Path
-          import subprocess
-          roots=['hooks/use-previous','components/user-list-filter','components/base-fetch','components/mocked-data-list','review/refactor-41-state-mutation']
-          for name in roots:
-              root=Path('src/tasks')/name
-              for f in (root/'starter').rglob('*'):
-                  if f.is_file():
-                      assert f.read_bytes()==(root/f.relative_to(root/'starter')).read_bytes(), f
-          source=Path('src/tasks/review/refactor-41-state-mutation/source.txt')
-          old=subprocess.check_output(['git','show','ecc2c28eb5a681f7f87f5467be46bcda83033fe8:src/tasks/review/refactor-41-state-mutation/attempts/current/source.txt'])
-          assert source.read_bytes()==old
-          print('Starter copies and original review source: PASS')
+          with tempfile.TemporaryDirectory() as tmp:
+              root=Path(tmp)
+              (root/'scripts').mkdir()
+              shutil.copyfile('scripts/create-task.mjs',root/'scripts/create-task.mjs')
+              categories=['components','hooks','review','js-basics']
+              for category in categories: (root/'src/tasks'/category).mkdir(parents=True)
+              def create(answers):
+                  p=subprocess.Popen(['node',str(root/'scripts/create-task.mjs')],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+                  output=b''
+                  try:
+                      for answer in answers:
+                          end=time.monotonic()+8
+                          while b'> ' not in output:
+                              remaining=end-time.monotonic()
+                              assert remaining>0 and select.select([p.stdout],[],[],remaining)[0], output
+                              chunk=os.read(p.stdout.fileno(),4096)
+                              assert chunk, output
+                              output+=chunk
+                          output=output.split(b'> ',1)[1]
+                          p.stdin.write((answer+'\n').encode())
+                          p.stdin.flush()
+                      tail,_=p.communicate(timeout=8)
+                      assert p.returncode==0,tail
+                  finally:
+                      if p.poll() is None: p.kill(); p.wait()
+              def check(category,slug,filename):
+                  directory=root/'src/tasks'/category/slug
+                  assert sorted(x.relative_to(directory).as_posix() for x in directory.rglob('*') if x.is_file())==sorted(['task.md',filename,'starter/'+filename])
+                  assert (directory/filename).read_bytes()==(directory/'starter'/filename).read_bytes()==b''
+                  assert ('[{}](./{})'.format(filename,filename)) in (directory/'task.md').read_text()
+              create(['','Проба','','9','2','task.md','HINT.MD','../outside.ts','CON.ts','UseProbe.tsx'])
+              check('hooks','proba','UseProbe.tsx')
+              create(['Проба','2','UseProbe.tsx'])
+              check('hooks','proba-2','UseProbe.tsx')
+              check('hooks','proba','UseProbe.tsx')
+              for number,category,filename in [(1,'components','Example.tsx'),(3,'review','review.md'),(4,'js-basics','timer.js')]:
+                  create(['Example',str(number),filename])
+                  check(category,'example',filename)
+              print('GENERATOR PASS: all categories, invalid inputs, collision, root drafts and identical empty starters')
           PY
-      - name: Install isolated browser dependencies
+      - name: Verify archived and protected files
         run: |
-          npm install --prefix /tmp/sandbox-browser playwright@1.56.1
-          /tmp/sandbox-browser/node_modules/.bin/playwright install --with-deps chromium
-      - name: Browser verification
-        run: |
-          pnpm dev --host 127.0.0.1 --port 5173 --strictPort > /tmp/vite.log 2>&1 &
-          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:5173/ >/dev/null && break; sleep 1; done
-          cat > /tmp/browser-check.mjs <<'JS'
-          import assert from 'node:assert/strict'
-          import {readFile, writeFile} from 'node:fs/promises'
-          import {chromium} from '/tmp/sandbox-browser/node_modules/playwright/index.mjs'
-          const browser=await chromium.launch({headless:true})
-          const page=await browser.newPage()
-          const nav=page.getByRole('navigation',{name:'Список заданий'})
-          const content=page.locator('.task-content')
-          const base='http://127.0.0.1:5173'
-          const show=async locator=>locator.waitFor({state:'visible',timeout:15000})
-          const select=async name=>nav.getByRole('button',{name,exact:true}).click()
-          const log=name=>console.log('BROWSER RESULT '+name+' PASS')
-          const originals=new Map()
-          const replace=async (file,fn,marker)=>{
-            const old=originals.get(file)??await readFile(file,'utf8')
-            originals.set(file,old)
-            const next=fn(old)
-            assert.notEqual(next,old)
-            await writeFile(file,next)
-            for(let i=0;i<50;i++){
-              const response=await fetch(base+'/'+file+'?t='+Date.now())
-              if(response.ok&&(await response.text()).includes(marker))return
-              await new Promise(resolve=>setTimeout(resolve,200))
-            }
-            throw new Error('Updated module not served: '+file)
-          }
-          try {
-            await page.goto(base)
-            await show(nav)
-            await select('Хранение предыдущего значения')
-            await show(content.getByText('current: 0',{exact:true}))
-            await content.getByRole('button',{name:'Increase',exact:true}).click()
-            await show(content.getByText('current: 1',{exact:true}))
-            await content.getByRole('button',{name:'Decrease',exact:true}).click()
-            await show(content.getByText('current: 0',{exact:true}))
-            log('usePrevious starter and consumer')
-            await select('Список пользователей с фильтром')
-            await show(content.getByText('Реализуй список из 7 пользователей.',{exact:true}))
-            log('filter starter')
-            await select('Реализовать компонент с fetch')
-            await show(content.getByText('Здесь будет UI задания с загрузкой данных.',{exact:true}))
-            log('fetch starter')
-            await select('Список данных через асинхронный мок')
-            await show(content.getByText('Реализуй загрузку списка через асинхронный мок.',{exact:true}))
-            log('mock starter')
-            await select('Рефакторинг 41: Две кнопки: счётчик и имя')
-            await show(content.getByRole('button',{name:'Anton',exact:true}))
-            await content.getByRole('button',{name:'Anton',exact:true}).click()
-            await show(content.getByRole('button',{name:'Anton',exact:true}))
-            await content.getByRole('button',{name:'0',exact:true}).click()
-            await show(content.getByRole('button',{name:'1',exact:true}))
-            await show(content.getByRole('button',{name:'Alex',exact:true}))
-            await content.getByRole('button',{name:'1',exact:true}).click()
-            await show(content.getByRole('button',{name:'1',exact:true}))
-            log('review original observable bugs preserved')
-            await select('Хранение предыдущего значения')
-            const previousFile='src/tasks/hooks/use-previous/UsePreviousTask.tsx'
-            await replace(previousFile,old=>old.replace('void state\n  return undefined','return state').replace('previous:', 'probe:'),'probe:')
-            await page.reload()
-            await show(content.getByText('probe: 0',{exact:true}))
-            await content.getByRole('button',{name:'Increase',exact:true}).click()
-            await show(content.getByText('probe: 1',{exact:true}))
-            log('consumer uses edited hook (probe, not exercise solution)')
-            await select('Список данных через асинхронный мок')
-            const mockRoot='src/tasks/components/mocked-data-list/'
-            await replace(mockRoot+'api.ts',old=>old.replace("Promise.reject(new Error('Мок ещё не реализован'))","Promise.resolve({result:{code:6,items:[{id:15,name:'mock-probe'}]}})"),'mock-probe')
-            await replace(mockRoot+'MockedDataListTask.tsx',old=>"import {useEffect,useState} from 'react'\nimport {fetchItems} from './api'\nexport function MockedDataListTask(){ const [value,setValue]=useState(''); useEffect(()=>{ void fetchItems().then(data=>setValue(data.result.items[0].name)) },[]);return <p>{value}</p> }\n",'fetchItems')
-            await page.reload()
-            await show(content.getByText('mock-probe',{exact:true}))
-            log('mock imports adjacent editable API')
-            await select('Булево состояние с переключением')
-            await show(content.getByText('Реализуй useToggle в файле UseToggleTask.tsx',{exact:true}))
-            await select('Список пользователей с фильтром')
-            await show(content.getByText('Реализуй список из 7 пользователей.',{exact:true}))
-            log('switching across first and second pilot')
-          }finally{
-            for(const [file,original] of originals)await writeFile(file,original)
-            await browser.close()
-          }
-          
-          JS
-          node /tmp/browser-check.mjs
-      - name: Verify restored files
-        if: always()
-        run: |
+          git diff --exit-code 8f6c1216fe9e66478945b8fb4788e902f74dbf95 HEAD -- src/tasks/00-sandbox-guide/attempts/2026-08-20 src/tasks/js-basics/timeout-basics src/tasks/index.ts
           git diff --exit-code
-          cat /tmp/vite.log || true
