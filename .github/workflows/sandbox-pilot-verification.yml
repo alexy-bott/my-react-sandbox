@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 76d77d26afa02d069bf6fb6c7e7cb325c534fe2e
+          ref: 64abebfd769685b4a4a35307f8ef177d382e9fb3
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
@@ -56,9 +56,8 @@ jobs:
           const log=(name,detail='')=>console.log('BROWSER RESULT '+name+' '+detail)
           const reload=async()=>{await page.reload();await show(nav)}
           const recover=async(locator,label)=>{
-            try{await locator.waitFor({state:'visible',timeout:3500});log(label,'automatic');return}
-            catch{log(label,'manual reload needed')}
-            await reload();await show(locator)
+            await locator.waitFor({state:'visible',timeout:15000})
+            log(label,'automatic')
           }
           try {
             await page.goto(base)
@@ -88,9 +87,17 @@ jobs:
             await show(status('On'))
             await content.getByRole('button',{name:'Disable',exact:true}).click()
             await show(status('Off'))
-            assert.equal(await page.evaluate(() => window.__sandboxCheck), 'same page', 'HMR must recover without page reload')
+            assert.equal(await page.evaluate(() => localStorage.getItem('active-task-id')), 'use-toggle', 'Automatic recovery must preserve active task')
             log('three controls and default false','PASS')
           
+            await content.getByRole('button',{name:'Enable',exact:true}).click()
+            await show(status('On'))
+            await page.evaluate(() => { window.__sandboxCheck = 'healthy page' })
+            await writeFile(file,solution.replace('Enabled:', 'State:'))
+            await show(content.getByText('State: On',{exact:true}))
+            assert.equal(await page.evaluate(() => window.__sandboxCheck), 'healthy page', 'Healthy HMR must not reload')
+            log('healthy HMR retains state and document','PASS')
+
             const variant=solution.replace('= useToggle()','= useToggle(true)').replace('setValue(false)','setValue(previous => !previous)')
             await writeFile(file,variant)
             await reload();await show(status('On'))
