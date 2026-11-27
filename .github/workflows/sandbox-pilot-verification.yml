@@ -59,7 +59,7 @@ jobs:
             await page.goto('http://127.0.0.1:4173/')
             const nav=page.getByRole('navigation',{name:'Список заданий'})
             const content=page.locator('.task-content')
-            for(const title of ['Рефакторинг 7: Переключатель с memo-кнопкой','Рефакторинг 41: Две кнопки: счётчик и имя']){
+            for(const title of ['Рефакторинг 07: Переключатель с memo-кнопкой','Рефакторинг 41: Две кнопки: счётчик и имя']){
               await nav.getByRole('button',{name:title,exact:true}).click()
               await content.getByText('Открой task.md и рабочий файл в редакторе. Для этого упражнения запуск в браузере не требуется.',{exact:true}).waitFor()
               console.log('CATALOG TEXT-ONLY PASS '+title)
