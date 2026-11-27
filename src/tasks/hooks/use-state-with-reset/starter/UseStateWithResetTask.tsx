@@ -3,11 +3,8 @@ import type {Dispatch, SetStateAction} from 'react'
 // T — тип состояния. Аргумент может быть значением или initializer-функцией.
 // Setter принимает новое значение или функцию от предыдущего состояния.
 function useStateWithReset<T>(
-  initialValue: T | (() => T),
+  _initialValue: T | (() => T),
 ): readonly [T, Dispatch<SetStateAction<T>>, () => void] {
-  // void отмечает аргумент использованным только до реализации.
-  // Замени обе строки рабочим кодом.
-  void initialValue
   throw new Error('Реализуй useStateWithReset')
 }
 

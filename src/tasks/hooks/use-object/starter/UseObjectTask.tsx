@@ -6,10 +6,8 @@ type ObjectResult<T extends PlainObject> = readonly [T, (update: ObjectUpdate<T>
 // Перегрузки описывают два вызова: без аргумента — произвольный объект,
 // с аргументом — объект указанного или выведенного типа.
 function useObject(): ObjectResult<PlainObject>
-function useObject<T extends PlainObject>(initialValue: T): ObjectResult<T>
-function useObject(initialValue: PlainObject = {}): ObjectResult<PlainObject> {
-  // Реализуй только тело этой функции. void временно отмечает аргумент использованным.
-  void initialValue
+function useObject<T extends PlainObject>(_initialValue: T): ObjectResult<T>
+function useObject(_initialValue: PlainObject = {}): ObjectResult<PlainObject> {
   throw new Error('Реализуй useObject')
 }
 

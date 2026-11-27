@@ -1,20 +1,7 @@
 import {lazy, type ComponentType} from 'react'
 import {SandboxGuideTask} from './00-sandbox-guide/active'
-import {UseDebounceThrottleEffectTask} from './hooks/use-debounce-throttle-effect/active'
 import {EffectLifecycleTask} from './review/effect-lifecycle/active'
-import {UseBreakpointTask} from './hooks/use-breakpoint/active'
-import {UseClickOutsideTask} from './hooks/use-click-outside/active'
-import {UseCombinedRefTask} from './hooks/use-combined-ref/active'
-import {UseEffectOnceTask} from './hooks/use-effect-once/active'
-import {UseEventListenerTask} from './hooks/use-event-listener/active'
-import {UseFetchTask} from './hooks/use-fetch/active'
-import {UseIsMountedSafeStateTask} from './hooks/use-is-mounted-safe-state/active'
-import {UseKeyPressTask} from './hooks/use-key-press/active'
-import {UseMutationObserverTask} from './hooks/use-mutation-observer/active'
-import {UseQueryParamsStateTask} from './hooks/use-query-params-state/active'
-import {UseMinMatchMediaTask} from './hooks/use-min-match-media/active'
 import {TimeoutBasicsTask} from './js-basics/timeout-basics/active'
-import {UseThrottleTask} from './hooks/use-throttle/active'
 
 export type TaskCategory =
   | 'components'
@@ -51,7 +38,7 @@ export const tasks: Task[] = [
   {
     id: 'use-fetch',
     title: 'Реализовать хук useFetch',
-    component: UseFetchTask,
+    component: lazy(() => import('./hooks/use-fetch/UseFetchTask').then(m => ({default: m.UseFetchTask}))),
     category: 'hooks',
   },
   {
@@ -242,7 +229,7 @@ export const tasks: Task[] = [
   {
     id: 'use-debounce-throttle-effect',
     title: 'Эффекты с debounce и throttle',
-    component: UseDebounceThrottleEffectTask,
+    component: lazy(() => import('./hooks/use-debounce-throttle-effect/demo/UseDebounceThrottleEffectTask').then(m => ({default: m.UseDebounceThrottleEffectTask}))),
     category: 'hooks',
   },
   {
@@ -280,7 +267,7 @@ export const tasks: Task[] = [
   {
     id: 'use-click-outside',
     title: 'Обработка клика вне элемента',
-    component: UseClickOutsideTask,
+    component: lazy(() => import('./hooks/use-click-outside/UseClickOutsideTask').then(m => ({default: m.UseClickOutsideTask}))),
     category: 'hooks',
   },
   {
@@ -300,7 +287,7 @@ export const tasks: Task[] = [
   {
     id: 'use-key-press',
     title: 'Обработка нажатия клавиши',
-    component: UseKeyPressTask,
+    component: lazy(() => import('./hooks/use-key-press/UseKeyPressTask').then(m => ({default: m.UseKeyPressTask}))),
     category: 'hooks',
   },
   {
@@ -312,7 +299,7 @@ export const tasks: Task[] = [
   {
     id: 'use-breakpoint',
     title: 'Определение текущего breakpoint',
-    component: UseBreakpointTask,
+    component: lazy(() => import('./hooks/use-breakpoint/UseBreakpointTask').then(m => ({default: m.UseBreakpointTask}))),
     category: 'hooks',
   },
   {
@@ -374,7 +361,7 @@ export const tasks: Task[] = [
   {
     id: 'use-combined-ref',
     title: 'Объединение нескольких ref',
-    component: UseCombinedRefTask,
+    component: lazy(() => import('./hooks/use-combined-ref/UseCombinedRefTask').then(m => ({default: m.UseCombinedRefTask}))),
     category: 'hooks',
   },
   {
@@ -396,31 +383,31 @@ export const tasks: Task[] = [
   {
     id: 'use-effect-once',
     title: 'Однократный эффект',
-    component: UseEffectOnceTask,
+    component: lazy(() => import('./hooks/use-effect-once/UseEffectOnceTask').then(m => ({default: m.UseEffectOnceTask}))),
     category: 'hooks',
   },
   {
     id: 'use-is-mounted-safe-state',
     title: 'Проверка монтирования и безопасное состояние',
-    component: UseIsMountedSafeStateTask,
+    component: lazy(() => import('./hooks/use-is-mounted-safe-state/UseIsMountedSafeStateTask').then(m => ({default: m.UseIsMountedSafeStateTask}))),
     category: 'hooks',
   },
   {
     id: 'use-query-params-state',
     title: 'Состояние в query-параметре',
-    component: UseQueryParamsStateTask,
+    component: lazy(() => import('./hooks/use-query-params-state/UseQueryParamsStateTask').then(m => ({default: m.UseQueryParamsStateTask}))),
     category: 'hooks',
   },
   {
     id: 'use-mutation-observer',
     title: 'Наблюдение за DOM-изменениями',
-    component: UseMutationObserverTask,
+    component: lazy(() => import('./hooks/use-mutation-observer/UseMutationObserverTask').then(m => ({default: m.UseMutationObserverTask}))),
     category: 'hooks',
   },
   {
     id: 'use-event-listener',
     title: 'Универсальный обработчик событий',
-    component: UseEventListenerTask,
+    component: lazy(() => import('./hooks/use-event-listener/UseEventListenerTask').then(m => ({default: m.UseEventListenerTask}))),
     category: 'hooks',
   },
   {
@@ -431,7 +418,7 @@ export const tasks: Task[] = [
   {
     id: 'use-min-match-media',
     title: 'Реализовать хук useMinMatchMedia',
-    component: UseMinMatchMediaTask,
+    component: lazy(() => import('./hooks/use-min-match-media/UseMinMatchMediaTask').then(m => ({default: m.UseMinMatchMediaTask}))),
     category: 'hooks',
   },
   {
@@ -477,7 +464,7 @@ export const tasks: Task[] = [
   {
     id: 'use-throttle',
     title: 'Ограничение обновлений значения — useThrottle',
-    component: UseThrottleTask,
+    component: lazy(() => import('./hooks/use-throttle/UseThrottleTask').then(m => ({default: m.UseThrottleTask}))),
     category: 'hooks',
   },
   {

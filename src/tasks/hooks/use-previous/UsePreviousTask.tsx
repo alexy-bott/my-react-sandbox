@@ -1,10 +1,7 @@
 import {useState} from 'react'
 
 // Твоё решение: возвращай предыдущее значение переданного аргумента.
-function usePrevious<T>(state: T): T | undefined {
-  // void временно отмечает аргумент использованным, не сохраняя его.
-  // Замени обе строки своей реализацией.
-  void state
+function usePrevious<T>(_state: T): T | undefined {
   return undefined
 }
 

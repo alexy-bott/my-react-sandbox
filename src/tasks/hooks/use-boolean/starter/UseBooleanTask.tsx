@@ -5,10 +5,7 @@ type UseBooleanReturn = {
 }
 
 // Твоё решение: реализуй состояние и методы по условию.
-function useBoolean(initialValue = false): UseBooleanReturn {
-  // void временно отмечает аргумент использованным.
-  // Замени обе строки реализацией: throw показывает сообщение вместо интерфейса.
-  void initialValue
+function useBoolean(_initialValue = false): UseBooleanReturn {
   throw new Error('Реализуй useBoolean')
 }
 

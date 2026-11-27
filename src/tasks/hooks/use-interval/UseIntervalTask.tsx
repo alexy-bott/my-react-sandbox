@@ -1,8 +1,6 @@
 import {useState} from 'react'
 
-function useInterval(callback: () => void, delay: number | null): void {
-  // Замени обе строки реализацией.
-  void [callback, delay]
+function useInterval(_callback: () => void, _delay: number | null): void {
   throw new Error('Реализуй useInterval')
 }
 

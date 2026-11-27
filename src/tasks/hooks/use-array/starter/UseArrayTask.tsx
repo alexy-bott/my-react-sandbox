@@ -5,10 +5,7 @@ type ArrayResult<T> = {
   removeByIndex: (index: number) => void
 }
 
-function useArray<T>(initialValue: T[]): ArrayResult<T> {
-  // void временно отмечает аргумент использованным.
-  // Замени обе строки рабочим кодом.
-  void initialValue
+function useArray<T>(_initialValue: T[]): ArrayResult<T> {
   throw new Error('Реализуй useArray')
 }
 

@@ -1,7 +1,3 @@
-// Учебная заглушка: `void` вычисляет выражение и отбрасывает его результат.
-// Здесь он лишь отмечает параметры использованными для TypeScript/ESLint,
-// но не реализует поведение хука. При решении замени заглушки рабочим кодом.
-
 import type {RefObject} from 'react'
 
 type EventMap = WindowEventMap &
@@ -18,5 +14,4 @@ export function useEventListener<
   _target?: RefObject<T | null>,
   _options?: boolean | AddEventListenerOptions,
 ): void {
-  void [_eventName, _handler, _target, _options]
 }

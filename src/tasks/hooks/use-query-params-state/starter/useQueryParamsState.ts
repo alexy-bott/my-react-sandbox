@@ -1,7 +1,3 @@
-// Учебная заглушка: `void` вычисляет выражение и отбрасывает его результат.
-// Здесь он лишь отмечает параметры использованными для TypeScript/ESLint,
-// но не реализует поведение хука. При решении замени заглушки рабочим кодом.
-
 import type {SetStateAction} from 'react'
 
 type QueryParamConfig<T> = {
@@ -26,11 +22,5 @@ type SetQueryParams<TSchema extends QueryParamsSchema> = (
 export function useQueryParamsState<TSchema extends QueryParamsSchema>(
   _schema: TSchema,
 ): readonly [QueryParamsState<TSchema>, SetQueryParams<TSchema>] {
-  void _schema
-  const state = {} as QueryParamsState<TSchema>
-  const setState: SetQueryParams<TSchema> = (_value, _options) => {
-    void [_value, _options]
-  }
-
-  return [state, setState] as const
+  throw new Error('Реализуй useQueryParamsState')
 }

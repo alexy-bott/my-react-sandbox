@@ -41,3 +41,5 @@ const [state, setState, goBack, goForward, history] =
 В браузере выбери «Состояние с историей изменений». После реализации проверь: сначала Current: first и History: first; Set second, затем Set third меняют текущее значение и добавляют их в историю; Back возвращает second, ещё один Back — first; Forward возвращает second, следующий Forward — third. История при перемещении сохраняется. Дополнительные правила поведения на границах или при новом изменении после Back не требуются.
 
 Для сохранения попытки скопируй рабочий файл в новую папку `attempts/YYYY-MM-DD/`. Для повторного прохождения восстанови его из [starter/StateHistoryTask.tsx](./starter/StateHistoryTask.tsx).
+
+После самостоятельной проверки сравни с [решением](./solution.tsx).

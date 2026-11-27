@@ -12,9 +12,7 @@ type UseCountdownResult = {
   reset: () => void
 }
 
-function useCountdown(options: UseCountdownOptions): UseCountdownResult {
-  // Замени обе строки реализацией.
-  void options
+function useCountdown(_options: UseCountdownOptions): UseCountdownResult {
   throw new Error('Реализуй useCountdown')
 }
 

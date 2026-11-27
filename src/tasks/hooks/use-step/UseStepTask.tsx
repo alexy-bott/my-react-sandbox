@@ -12,10 +12,7 @@ type StepResult = {
 }
 
 // Твоё решение: реализуй управление шагами по условию.
-function useStep(maxStep: number): StepResult {
-  // void отмечает аргумент использованным только до реализации.
-  // Замени обе строки рабочим кодом.
-  void maxStep
+function useStep(_maxStep: number): StepResult {
   throw new Error('Реализуй useStep')
 }
 

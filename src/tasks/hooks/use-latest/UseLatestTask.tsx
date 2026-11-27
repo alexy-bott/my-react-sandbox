@@ -1,10 +1,7 @@
 import {useState, type ChangeEvent, type RefObject} from 'react'
 
 // T — тип переданного значения. Ref должен сохранять свою ссылку.
-function useLatest<T>(value: T): RefObject<T> {
-  // void временно отмечает аргумент использованным.
-  // Замени обе строки реализацией.
-  void value
+function useLatest<T>(_value: T): RefObject<T> {
   throw new Error('Реализуй useLatest')
 }
 

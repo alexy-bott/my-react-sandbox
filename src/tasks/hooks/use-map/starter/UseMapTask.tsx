@@ -10,10 +10,7 @@ type MapResult<K, V> = {
   reset: () => void
 }
 
-function useMap<K, V>(defaultValue: MapInput<K, V>): MapResult<K, V> {
-  // void временно отмечает аргумент использованным.
-  // Замени обе строки рабочим кодом.
-  void defaultValue
+function useMap<K, V>(_defaultValue: MapInput<K, V>): MapResult<K, V> {
   throw new Error('Реализуй useMap')
 }
 

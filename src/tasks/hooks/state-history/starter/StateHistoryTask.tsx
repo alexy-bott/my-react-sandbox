@@ -7,10 +7,7 @@ type StateHistoryTuple<T> = [
   history: T[],
 ]
 
-function useStateWithHistory<T>(initialState: T): StateHistoryTuple<T> {
-  // void временно отмечает аргумент использованным.
-  // Замени обе строки рабочим кодом.
-  void initialState
+function useStateWithHistory<T>(_initialState: T): StateHistoryTuple<T> {
   throw new Error('Реализуй useStateWithHistory')
 }
 
