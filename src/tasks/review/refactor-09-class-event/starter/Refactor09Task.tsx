@@ -1,10 +1,13 @@
-import source from './source.txt?raw'
-
-export function Refactor09Task() {
-  return (
-    <div className="task-card">
-      <p className="task-note">Исходник для ревью. Условие — в task.md; замечания — в attempts/current/review.md.</p>
-      <pre style={{whiteSpace: 'pre-wrap'}}><code>{source}</code></pre>
-    </div>
-  )
+import React, { Component } from "react";
+export default class App extends Component {
+  onClick = (event) => {
+    this.setState({ event });
+  });
+  logEvent = () => { console.log(this.state.event.target); };
+  render() {
+    return <div>
+      <button onClick={this.onClick}>click me</button>
+      <button onClick={this.logEvent}>log event</button>
+    </div>;
+  }
 }

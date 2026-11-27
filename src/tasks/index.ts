@@ -53,8 +53,6 @@ import {Refactor02Task} from './review/refactor-02-buggy-todo/active'
 import {Refactor03Task} from './review/refactor-03-redux-todos/active'
 import {Refactor04Task} from './review/refactor-04-cart-scroll/active'
 import {Refactor05Task} from './review/refactor-05-list-mutation/active'
-import {Refactor09Task} from './review/refactor-09-class-event/active'
-import {Refactor10Task} from './review/refactor-10-lazy-init/active'
 import {Refactor11Task} from './review/refactor-11-reverse-list/active'
 import {Refactor13Task} from './review/refactor-13-create-number/active'
 import {Refactor15Task} from './review/refactor-15-click-listener/active'
@@ -62,7 +60,6 @@ import {Refactor17Task} from './review/refactor-17-click-intervals/active'
 import {Refactor18Task} from './review/refactor-18-counter-reset/active'
 import {Refactor19Task} from './review/refactor-19-timed-users/active'
 import {Refactor20Task} from './review/refactor-20-selected-post/active'
-import {Refactor21Task} from './review/refactor-21-todo-search/active'
 import {Refactor22Task} from './review/refactor-22-context-performance/active'
 import {Refactor25Task} from './review/refactor-25-conditional-focus/active'
 import {Refactor26Task} from './review/refactor-26-products-timer/active'
@@ -72,7 +69,6 @@ import {Refactor29Task} from './review/refactor-29-random-request-error/active'
 import {Refactor30Task} from './review/refactor-30-infinite-scroll/active'
 import {Refactor31Task} from './review/refactor-31-number-and-scroll/active'
 import {Refactor32Task} from './review/refactor-32-user-profile/active'
-import {Refactor35Task} from './review/refactor-35-count-display/active'
 import {Refactor37Task} from './review/refactor-37-heavy-send/active'
 import {Refactor39Task} from './review/refactor-39-timer-controls/active'
 import {Refactor40Task} from './review/refactor-40-car-garage/active'
@@ -599,13 +595,11 @@ export const tasks: Task[] = [
   {
     id: 'refactor-09-class-event',
     title: 'Рефакторинг 09: Классовый компонент и сохранённое событие',
-    component: Refactor09Task,
     category: 'review',
   },
   {
     id: 'refactor-10-lazy-init',
     title: 'Рефакторинг 10: Дорогое вычисление начального состояния',
-    component: Refactor10Task,
     category: 'review',
   },
   {
@@ -663,7 +657,6 @@ export const tasks: Task[] = [
   {
     id: 'refactor-21-todo-search',
     title: 'Рефакторинг 21: Рефакторинг поиска по списку дел',
-    component: Refactor21Task,
     category: 'review',
   },
   {
@@ -728,7 +721,6 @@ export const tasks: Task[] = [
   {
     id: 'refactor-35-count-display',
     title: 'Рефакторинг 35: CountDisplay и значение из props',
-    component: Refactor35Task,
     category: 'review',
   },
   {
