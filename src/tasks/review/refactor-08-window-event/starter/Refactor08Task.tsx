@@ -1,10 +1,21 @@
-import source from './source.txt?raw'
-
-export function Refactor08Task() {
-  return (
-    <div className="task-card">
-      <p className="task-note">Исходник для ревью. Условие — в task.md; замечания — в attempts/current/review.md.</p>
-      <pre style={{whiteSpace: 'pre-wrap'}}><code>{source}</code></pre>
-    </div>
-  )
+function WindowEvent({ event, handler, options }: {
+  event: string;
+  handler: EventListener;
+  options?: EventListenerOptions;
+}){
+  useEffect(() => {
+    console.log('useEffect');
+    window.addEventListener(event, handler, options);
+    return () => { window.removeEventListener(event, handler, options); };
+  }, [event, handler, options])
+  return null
+}
+export default function App() {
+  const [isVisible, setIsVisible] = useState(false)
+  const onclick = useCallback(() => { setIsVisible(prev => !prev) }, [])
+  return <>
+    <Button onClick={onClick}/>
+    <WindowEvent event="click" handler={() => console.log("click")} />
+    {isVisible && (<div>lorem ipsum</div>)}
+  </>
 }

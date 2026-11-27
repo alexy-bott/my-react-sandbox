@@ -1,10 +1,11 @@
-import source from './source.txt?raw'
-
-export function Refactor36Task() {
-  return (
-    <div className="task-card">
-      <p className="task-note">Исходник для ревью. Условие — в task.md; замечания — в attempts/current/review.md.</p>
-      <pre style={{whiteSpace: 'pre-wrap'}}><code>{source}</code></pre>
-    </div>
-  )
-}
+import { useEffect, useState, FC } from "react";
+const data = { name: "54", age: 21, info: 22 };
+const MainFc: FC<typeof data> = ({ name, ...rest }) => {
+  const [state, setState] = useState(0);
+  useEffect(() => { setInterval(() => { setState((prev) => prev + 1); }, 1000); }, []);
+  useEffect(() => {
+    // .... какие-то сложные вычисления
+  }, [rest]);
+  return <div>{state}</div>;
+};
+export const App = () => <MainFc {...data} />;

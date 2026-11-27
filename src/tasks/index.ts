@@ -54,9 +54,6 @@ import {Refactor02Task} from './review/refactor-02-buggy-todo/active'
 import {Refactor03Task} from './review/refactor-03-redux-todos/active'
 import {Refactor04Task} from './review/refactor-04-cart-scroll/active'
 import {Refactor05Task} from './review/refactor-05-list-mutation/active'
-import {Refactor06Task} from './review/refactor-06-numbers-render/active'
-import {Refactor07Task} from './review/refactor-07-memo-toggle/active'
-import {Refactor08Task} from './review/refactor-08-window-event/active'
 import {Refactor09Task} from './review/refactor-09-class-event/active'
 import {Refactor10Task} from './review/refactor-10-lazy-init/active'
 import {Refactor11Task} from './review/refactor-11-reverse-list/active'
@@ -80,7 +77,6 @@ import {Refactor31Task} from './review/refactor-31-number-and-scroll/active'
 import {Refactor32Task} from './review/refactor-32-user-profile/active'
 import {Refactor34Task} from './review/refactor-34-interval-no-deps/active'
 import {Refactor35Task} from './review/refactor-35-count-display/active'
-import {Refactor36Task} from './review/refactor-36-rest-dependencies/active'
 import {Refactor37Task} from './review/refactor-37-heavy-send/active'
 import {Refactor39Task} from './review/refactor-39-timer-controls/active'
 import {Refactor40Task} from './review/refactor-40-car-garage/active'
@@ -593,19 +589,16 @@ export const tasks: Task[] = [
   {
     id: 'refactor-06-numbers-render',
     title: 'Рефакторинг 06: Счётчик и независимый список numbers',
-    component: Refactor06Task,
     category: 'review',
   },
   {
     id: 'refactor-07-memo-toggle',
     title: 'Рефакторинг 07: Переключатель с memo-кнопкой',
-    component: Refactor07Task,
     category: 'review',
   },
   {
     id: 'refactor-08-window-event',
     title: 'Рефакторинг 08: WindowEvent: лишние вызовы эффекта',
-    component: Refactor08Task,
     category: 'review',
   },
   {
@@ -749,7 +742,6 @@ export const tasks: Task[] = [
   {
     id: 'refactor-36-rest-dependencies',
     title: 'Рефакторинг 36: Интервал и объект rest в зависимостях',
-    component: Refactor36Task,
     category: 'review',
   },
   {

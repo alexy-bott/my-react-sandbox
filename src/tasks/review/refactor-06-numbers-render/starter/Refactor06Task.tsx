@@ -1,10 +1,9 @@
-import source from './source.txt?raw'
-
-export function Refactor06Task() {
-  return (
-    <div className="task-card">
-      <p className="task-note">Исходник для ревью. Условие — в task.md; замечания — в attempts/current/review.md.</p>
-      <pre style={{whiteSpace: 'pre-wrap'}}><code>{source}</code></pre>
-    </div>
-  )
+export default function App() {
+  const [count, setCount] = useState(0);
+  const [numbers] = useState([1,23,4,6,21,3])
+  return <div>
+    <div>count</div>
+    <button onClick={() => setCount((count) => count + 1)}>Increment</button>
+    <ul>{numbers.map(num => <li>{num}</li>)}</ul>
+  </div>
 }
