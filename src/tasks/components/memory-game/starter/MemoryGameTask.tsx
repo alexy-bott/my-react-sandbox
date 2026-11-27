@@ -7,8 +7,7 @@ const images = [
   'https://images.unsplash.com/photo-1591181520189-abcb0735c65d',
 ]
 
-function MemoryGame({images}: {images: string[]}) {
-  void images
+function MemoryGame(_props: {images: string[]}) {
   // Твой код здесь: карточки и логика поиска пар.
   return null
 }

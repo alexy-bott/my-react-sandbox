@@ -1,5 +1,9 @@
 # Code review и рефакторинг UsersPage
 
+**Ревью кода**
+
+Открой [App.tsx](./App.tsx), [UsersPage.tsx](./UsersPage.tsx).
+
 ## Контекст
 
 Представь, что `UsersPage.tsx` и `App.tsx` пришли в Pull Request. Код работает в базовом сценарии, но перед merge его нужно отревьюить и при необходимости отрефакторить как production-код.
@@ -48,8 +52,4 @@ GET /api/users?search=<query>
 
 После review код должен выглядеть так, чтобы PR можно было отправить в production.
 
-## Как работать с задачей
-
-Основные исходники — `attempts/current/UsersPage.tsx` и `attempts/current/App.tsx`.
-
-`starter/` — чистая исходная версия. Используй её, если захочешь начать заново.
+После самостоятельной работы сравни с [разбором](./solution/). Чтобы начать заново, восстанови рабочие файлы из [starter/](./starter/).

@@ -33,7 +33,6 @@ function Cart({name, price, count}: Product) {
 }
 
 export function ProductListFilteringTask() {
-  void PRODUCTS
 
   return (
     <div className="task-card">
@@ -49,7 +48,7 @@ export function ProductListFilteringTask() {
       </div>
       <div>Список продуктов:</div>
       <div className="cart-wrapper">
-        <Cart name="Apple" price={10} count={5} />
+        <Cart {...PRODUCTS[0]} />
       </div>
     </div>
   )

@@ -40,9 +40,8 @@ function QuizApp() {
     },
   ]
 
-  void mock
 
-  return <p className="task-note">Реализуй Quiz App по условиям из task.md.</p>
+  return <h2>{mock[0].question}</h2>
 }
 
 export function QuizTask() {

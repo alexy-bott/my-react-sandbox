@@ -1,4 +1,4 @@
-function getPeople(name: string, page = 1, options: RequestInit = {}) {
+export function getPeople(name: string, page = 1, options: RequestInit = {}) {
   return fetch(
     `https://rickandmortyapi.com/api/character?name=${name}&page=${page}`,
     options,
@@ -6,7 +6,6 @@ function getPeople(name: string, page = 1, options: RequestInit = {}) {
 }
 
 function RickMortySearch() {
-  void getPeople
 
   return '20 minutes adventure!'
 }

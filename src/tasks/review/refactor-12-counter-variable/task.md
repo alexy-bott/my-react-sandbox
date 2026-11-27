@@ -1,5 +1,7 @@
 # Счётчик в локальной переменной
 
+**Ревью кода**
+
 **Рабочие файлы:** [Refactor12Task.tsx](./Refactor12Task.tsx), [Counter38.tsx](./Counter38.tsx).
 
 ## Задание

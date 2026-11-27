@@ -1,7 +1,6 @@
-const url = 'https://jsonplaceholder.typicode.com/users'
+export const url = 'https://jsonplaceholder.typicode.com/users'
 
 function UserTable() {
-  void url
 
   return <div />
 }

@@ -3,9 +3,8 @@ type TimerProps = {
 }
 
 function Timer({initialTime}: TimerProps) {
-  void initialTime
 
-  return <div />
+  return <div>{initialTime} мс</div>
 }
 
 export function CountdownTimerTask() {

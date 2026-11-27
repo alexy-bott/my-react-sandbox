@@ -3,7 +3,7 @@ type PeopleResponse = {
   results: Array<{name: string; url: string}>
 }
 
-function getPeople(search: string, page = 1, options: RequestInit = {}) {
+export function getPeople(search: string, page = 1, options: RequestInit = {}) {
   return fetch(
     `https://swapi.dev/api/people?search=${search}&page=${page}`,
     options,
@@ -13,7 +13,6 @@ function getPeople(search: string, page = 1, options: RequestInit = {}) {
 }
 
 function InputAutocomplete() {
-  void getPeople
 
   return 'Hello there!'
 }

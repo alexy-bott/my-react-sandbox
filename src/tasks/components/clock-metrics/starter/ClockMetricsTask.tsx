@@ -1,14 +1,12 @@
 import {useState} from 'react'
 
-function logMetric(date: string) {
-  void fetch('/api/metric', date as unknown as RequestInit)
+export function logMetric(date: string) {
+  return fetch('/api/metric', {method: 'POST', body: date})
 }
 
 function Clock() {
-  const [currentDate, setCurrentDate] = useState(new Date().toISOString())
+  const [currentDate] = useState(new Date().toISOString())
 
-  void setCurrentDate
-  void logMetric
 
   return <h1>{currentDate}</h1>
 }

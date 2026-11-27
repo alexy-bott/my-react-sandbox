@@ -1,5 +1,7 @@
 # Дорогое вычисление начального состояния
 
+**Ревью кода**
+
 **Рабочие файлы:** [Refactor10Task.tsx](./Refactor10Task.tsx), [LazyInit23.tsx](./LazyInit23.tsx).
 
 ## Задание

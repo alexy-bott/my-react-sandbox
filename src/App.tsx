@@ -118,7 +118,7 @@ function App() {
           ) : ActiveTaskComponent ? (
             <TaskRunner taskId={activeTask.id} component={ActiveTaskComponent} />
           ) : (
-            <p className="task-note">Открой task.md и рабочий файл в редакторе. Для этого упражнения запуск в браузере не требуется.</p>
+            <p className="task-note">Открой task.md и рабочий файл в редакторе. Способ проверки указан в условии.</p>
           )}
         </div>
       </section>

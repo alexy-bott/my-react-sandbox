@@ -1,0 +1,45 @@
+import type {FC} from 'react'
+
+type UserData = {
+  id: number
+  name: string
+}
+
+function fetchUser({id}: {id: number}): Promise<UserData> {
+  return Promise.resolve({id, name: `User ${id}`})
+}
+
+type Props = {
+  userId: number | null
+}
+
+export const User: FC<Props> = ({userId}) => {
+  // Write your solution here
+  const user = userId && fetchUser({id: userId})
+
+  if (!user) return null
+
+  return (
+    <div className="stack column">
+      <div>UserId: </div>
+      <div>UserName: </div>
+    </div>
+  )
+}
+
+export const Loader = () => <p data-testid="loader">Loading...</p>
+
+export const UserError = ({error}: {error: Error}) => (
+  <p style={{color: 'red'}} data-testid="error">
+    {error.message}
+  </p>
+)
+
+export function UserDataLoaderTask() {
+
+  return (
+    <div className="task-card">
+      <User userId={1} />
+    </div>
+  )
+}

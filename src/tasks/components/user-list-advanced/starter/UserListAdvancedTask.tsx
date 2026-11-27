@@ -1,9 +1,8 @@
 import {initialUsers} from './initialUsers'
 
 function UserList() {
-  void initialUsers
 
-  return null
+  return <p>Пользователей: {initialUsers.length}</p>
 }
 
 export function UserListAdvancedTask() {

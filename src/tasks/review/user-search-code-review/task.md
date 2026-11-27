@@ -1,5 +1,7 @@
 # Ревью компонента UserSearch
 
+**Ревью кода**
+
 **Рабочие файлы:** [UserSearch.tsx](./UserSearch.tsx).
 
 ## Контекст

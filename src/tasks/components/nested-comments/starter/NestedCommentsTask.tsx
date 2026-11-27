@@ -34,8 +34,7 @@ const comments: CommentData[] = [
   {id: 5, text: 'message 5'},
 ]
 
-function Comments({comments}: CommentsProps) {
-  void comments
+function Comments(_props: CommentsProps) {
   return null
 }
 

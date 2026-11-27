@@ -8,9 +8,8 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 export default defineConfig([
   globalIgnores([
     'dist',
+    'src/tasks/review/refactor-11-reverse-list/{,starter/}App.tsx',
     // Original interview snippets are deliberately not application code.
-    'src/tasks/review/refactor-06-numbers-render/Refactor06Task.tsx',
-    'src/tasks/review/refactor-06-numbers-render/starter/Refactor06Task.tsx',
     'src/tasks/review/refactor-07-memo-toggle/Refactor07Task.tsx',
     'src/tasks/review/refactor-07-memo-toggle/starter/Refactor07Task.tsx',
     'src/tasks/review/refactor-08-window-event/Refactor08Task.tsx',
@@ -23,8 +22,6 @@ export default defineConfig([
     'src/tasks/review/refactor-12-counter-variable/starter/Counter38.tsx',
     'src/tasks/review/refactor-34-interval-no-deps/Refactor34Task.tsx',
     'src/tasks/review/refactor-34-interval-no-deps/starter/Refactor34Task.tsx',
-    'src/tasks/review/refactor-14-even-child/Refactor14Task.tsx',
-    'src/tasks/review/refactor-14-even-child/starter/Refactor14Task.tsx',
     'src/tasks/review/user-search-code-review/UserSearch.tsx',
     'src/tasks/review/user-search-code-review/starter/UserSearch.tsx',
     'src/tasks/review/refactor-09-class-event/Refactor09Task.tsx',

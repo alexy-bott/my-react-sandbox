@@ -27,16 +27,15 @@ export const User: FC<Props> = ({userId}) => {
   )
 }
 
-const Loader = () => <p data-testid="loader">Loading...</p>
+export const Loader = () => <p data-testid="loader">Loading...</p>
 
-const UserError = ({error}: {error: Error}) => (
+export const UserError = ({error}: {error: Error}) => (
   <p style={{color: 'red'}} data-testid="error">
     {error.message}
   </p>
 )
 
 export function UserDataLoaderTask() {
-  void [Loader, UserError]
 
   return (
     <div className="task-card">

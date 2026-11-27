@@ -7,11 +7,10 @@ function HierarchicalList() {
     {id: 5, name: 'Element 5', parentId: 2},
   ]
 
-  void ListData
 
   return (
     <ul>
-      <li>Element 1</li>
+      <li>{ListData[0].name}</li>
     </ul>
   )
 }
