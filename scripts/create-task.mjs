@@ -1,13 +1,15 @@
 import {mkdir, rm, writeFile} from 'node:fs/promises'
-import {dirname, join, resolve} from 'node:path'
+import {dirname, join, resolve, extname, relative} from 'node:path'
 import {createInterface} from 'node:readline/promises'
 import {fileURLToPath} from 'node:url'
 
-const CATEGORIES = [
-  {id: 'components', title: 'Компоненты и интерфейс'},
-  {id: 'hooks', title: 'Хуки'},
-  {id: 'review', title: 'Разбор и рефакторинг'},
-  {id: 'js-basics', title: 'JavaScript в консоли'},
+const templates = [
+  {group: 'components', title: 'Создание компонента', file: 'Component.tsx'},
+  {group: 'hooks', title: 'Хук с демонстрацией в UI', file: 'HookTask.tsx', demo: true},
+  {group: 'hooks', title: 'Хук без отдельной UI-демонстрации', file: 'useExample.ts'},
+  {group: 'review', title: 'Ревью кода', file: 'Component.tsx'},
+  {group: 'review', title: 'Исправление поведения компонента', file: 'Component.tsx'},
+  {group: 'js-basics', title: 'JavaScript в консоли', file: 'index.js'},
 ]
 
 const TRANSLITERATION = {
@@ -72,90 +74,92 @@ function createSlug(title) {
   )
 }
 
-async function askTitle(readline) {
-  while (true) {
-    const title = (await readline.question('Название задачи:\n> ')).trim()
-
-    if (title) {
-      return title
-    }
-
-    console.log('Введите название задачи.\n')
-  }
-}
-
-async function askCategory(readline) {
-  console.log('Категория:')
-  CATEGORIES.forEach((category, index) => {
-    console.log(`${index + 1}. ${category.title}`)
-  })
-
-  while (true) {
-    const answer = (await readline.question('\nВыберите раздел:\n> ')).trim()
-
-    const category = CATEGORIES[Number(answer) - 1]
-
-    if (category && String(Number(answer)) === answer) {
-      return category.id
-    }
-
-    console.log('Выберите номер от 1 до 4.')
-  }
-}
-
-async function askFileName(readline) {
-  while (true) {
-    const name = (await readline.question('Имя рабочего файла (например, timer.js или UseToggleTask.tsx):\n> ')).trim()
-    if (/^[\p{L}\p{N}_-][\p{L}\p{N}_.-]*\.[a-z0-9]+$/iu.test(name) &&
-        !/^(con|prn|aux|nul|com[1-9]|lpt[1-9])\./i.test(name) &&
-        !/^(task|hint)\.md$/i.test(name)) {
-      return name
-    }
-    console.log('Введи имя с расширением без пути к папке. Имена task.md и hint.md зарезервированы.')
-  }
-}
-
 async function main() {
-  const readline = createInterface({input: process.stdin, output: process.stdout})
-  let title
-  let category
-  let fileName
-  try {
-    title = await askTitle(readline)
-    category = await askCategory(readline)
-    fileName = await askFileName(readline)
-  } finally {
-    readline.close()
+  const input = createInterface({input: process.stdin, output: process.stdout})
+  const lines = input[Symbol.asyncIterator]()
+  async function ask(prompt) {
+    process.stdout.write(prompt + '\n> ')
+    const line = await lines.next()
+    if (line.done) throw new Error('Ввод завершён до создания задачи.')
+    return line.value.trim()
   }
 
-  const slug = createSlug(title)
-  let id = slug
-  let suffix = 2
-  const groupDirectory = join(tasksRoot, category)
-  while (true) {
-    try {
-      await mkdir(join(groupDirectory, id))
-      break
-    } catch (error) {
-      if (error.code !== 'EEXIST') throw error
-      id = `${slug}-${suffix++}`
-    }
-  }
-  const directory = join(groupDirectory, id)
   try {
-    await mkdir(join(directory, 'starter'))
-    await writeFile(join(directory, 'task.md'), `# ${title}\n\n**Рабочий файл:** [${fileName}](./${fileName}).\n`)
-    await writeFile(join(directory, 'starter', fileName), '')
-    await writeFile(join(directory, fileName), '')
-  } catch (error) {
-    await rm(directory, {recursive: true, force: true})
-    throw error
+    let title = ''
+    while (!title) title = await ask('Название задачи')
+
+    templates.forEach((template, i) => console.log(`${i + 1}. ${template.title}`))
+    let template
+    while (!template) {
+      const choice = await ask('Номер шаблона')
+      if (/^[1-6]$/.test(choice)) template = templates[Number(choice) - 1]
+    }
+
+    let separateDemo = false
+    if (template.demo) {
+      let choice
+      do {
+        choice = await ask('Демонстрация: Enter — рядом с хуком, 2 — отдельный Demo.tsx')
+      } while (!['', '1', '2'].includes(choice))
+      separateDemo = choice === '2'
+    }
+
+    const suggestedFile = separateDemo ? 'useExample.ts' : template.file
+    let fileName
+    while (!fileName) {
+      const name = (await ask(`Рабочий файл [${suggestedFile}]`)) || suggestedFile
+      if (/^[\p{L}\p{N}_-][\p{L}\p{N}_.-]*\.[a-z0-9]+$/iu.test(name) &&
+          !/^(con|prn|aux|nul|com[1-9]|lpt[1-9]|solution)\./i.test(name) &&
+          !/^(task|hint)\.md$/i.test(name) && !(separateDemo && /^demo\.tsx$/i.test(name))) {
+        fileName = name
+      } else {
+        console.log('Введите имя с расширением, которое не занято шаблоном.')
+      }
+    }
+
+    const suggested = join(tasksRoot, template.group, createSlug(title))
+    const choice = await ask(`Папка новой задачи [${relative(projectRoot, suggested)}]. Можно указать свой путь.`)
+    const base = choice ? resolve(projectRoot, choice) : suggested
+    await mkdir(dirname(base), {recursive: true})
+    let directory = base
+    let suffix = 2
+    while (true) {
+      try {
+        await mkdir(directory)
+        break
+      } catch (error) {
+        if (error.code !== 'EEXIST') throw error
+        if (choice) throw new Error(`Путь уже занят: ${directory}. Выберите новую папку.`)
+        directory = base + '-' + suffix++
+      }
+    }
+
+    const solution = 'solution' + extname(fileName)
+    try {
+      await mkdir(join(directory, 'starter'))
+      const files = [fileName, join('starter', fileName), solution]
+      if (separateDemo) files.push('Demo.tsx')
+      for (const file of files) await writeFile(join(directory, file), '', {flag: 'wx'})
+      const sections = [
+        '# ' + title, '**' + template.title + '**',
+        'Открой [' + fileName + '](./' + fileName + ').',
+        '## Задание', '## Как проверить',
+      ]
+      if (separateDemo) sections.push('Демонстрация — [Demo.tsx](./Demo.tsx).')
+      sections.push('После самостоятельной работы сравни с [решением](./' + solution + '). Для новой попытки возьми [стартовую копию](./starter/' + fileName + ').')
+      await writeFile(join(directory, 'task.md'), sections.join('\n\n') + '\n', {flag:'wx'})
+    } catch (error) {
+      await rm(directory, {recursive: true, force: true})
+      throw error
+    }
+    console.log('Создан черновик: ' + join(directory, 'task.md'))
+    console.log('Заполни условие и рабочий файл, обнови starter/ и подготовь ответ. Готовую задачу можно подключить к каталогу.')
+  } finally {
+    input.close()
   }
-  console.log(`Создан черновик: src/tasks/${category}/${id}/task.md`)
-  console.log('Подготовь условие и рабочие файлы. Затем обнови starter/ и подключи готовое упражнение к каталогу.')
 }
 
-main().catch((error) => {
-  console.error(`Ошибка: ${error.message}`)
+main().catch(error => {
+  console.error('Ошибка: ' + error.message)
   process.exitCode = 1
 })

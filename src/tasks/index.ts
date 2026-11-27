@@ -1,7 +1,6 @@
 import {lazy, type ComponentType} from 'react'
 import {SandboxGuideTask} from './00-sandbox-guide/active'
 import {EffectLifecycleTask} from './review/effect-lifecycle/active'
-import {TimeoutBasicsTask} from './js-basics/timeout-basics/active'
 
 export type TaskCategory =
   | 'components'
@@ -435,8 +434,8 @@ export const tasks: Task[] = [
   {
     id: 'timeout-basics',
     title: 'Первый отложенный вызов',
-    command: 'node src/tasks/js-basics/timeout-basics/attempts/current/timer.js',
-    component: TimeoutBasicsTask,
+    command: 'node src/tasks/js-basics/timeout-basics/timer.js',
+    component: lazy(() => import('./js-basics/timeout-basics/TimeoutBasicsTask').then(m => ({default: m.TimeoutBasicsTask}))),
     category: 'js-basics',
   },
   {
