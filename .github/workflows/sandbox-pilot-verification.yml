@@ -1,4 +1,4 @@
-name: Sandbox viewport hook migration verification
+name: Interview review flow pilot verification
 on:
   push:
     branches: [codex/sandbox-pilot-verification]
@@ -7,11 +7,11 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 843e1f1bc036d54bc7ef558582871bde261ade26
+          ref: 72ad4039c88bb30c5fddba2f5e214fa7a4443038
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@v4
@@ -21,255 +21,55 @@ jobs:
         run: |
           npm install --global pnpm@10.26.0
           pnpm install --frozen-lockfile
-      - name: Build
-        run: pnpm build
-      - name: Lint migrated hooks and registry
-        run: pnpm exec eslint src/tasks/index.ts src/tasks/hooks/use-breakpoint src/tasks/hooks/use-min-match-media
-      - name: Check source fidelity and local links
+      - name: Check exact source copies and scoped diff
         run: |
           python - <<'PY'
           from pathlib import Path
-          import re, subprocess
+          import subprocess,re
           base='00c0b2b031f683dc2b7f9eacff6c6b2a9f91275f'
-          cases=[('use-breakpoint','UseBreakpointTask'),('use-min-match-media','UseMinMatchMediaTask')]
-          for name,comp in cases:
-              root=Path('src/tasks/hooks')/name
-              file=root/(comp+'.tsx')
-              assert file.read_bytes()==(root/'starter'/file.name).read_bytes()
-              assert not (root/'active.ts').exists()
-              assert not (root/'attempts').exists()
-              if (root/'hint.md').exists():
-                  assert (root/'hint.md').read_bytes().startswith(subprocess.check_output(['git','show',base+':'+(root/'hint.md').as_posix()]))
-              for target in re.findall(r'\]\((\./[^)]+)\)',(root/'task.md').read_text()):
-                  assert (root/target).exists(),target
-          print('Clean starters, preserved hints, direct links: PASS')
+          cases=[('refactor-41-state-mutation','Refactor41Task.tsx','source.txt'),('refactor-07-memo-toggle','Refactor07Task.tsx','starter/source.txt')]
+          for name,file,source in cases:
+              root=Path('src/tasks/review')/name
+              original=subprocess.check_output(['git','show',base+':'+str(root/source)])
+              assert (root/file).read_bytes()==original
+              assert (root/'starter'/file).read_bytes()==original
+              assert (root/'solution.tsx').is_file()
+              assert not (root/'review.md').exists()
+              for link in re.findall(r'\]\((\./[^)]+)\)',(root/'task.md').read_text()):
+                  assert (root/link).exists(),link
+          print('Original snippets preserved byte for byte; starter and task links PASS')
           PY
-      - name: Install browser separately
+      - name: Build application without importing interview snippets
+        run: pnpm build
+      - name: Verify example answers and catalog lint
         run: |
-          npm install --prefix /tmp/sandbox-browser playwright@1.56.1
-          /tmp/sandbox-browser/node_modules/.bin/playwright install --with-deps chromium
-      - name: Browser verification
+          pnpm exec eslint src/App.tsx src/tasks/index.ts eslint.config.js src/tasks/review/refactor-07-memo-toggle/solution.tsx src/tasks/review/refactor-41-state-mutation/solution.tsx
+          pnpm exec tsc --ignoreConfig --strict --noEmit --skipLibCheck --target es2023 --module esnext --moduleResolution bundler --jsx react-jsx src/tasks/review/refactor-07-memo-toggle/solution.tsx src/tasks/review/refactor-41-state-mutation/solution.tsx
+      - name: Catalog smoke test
         run: |
-          pnpm dev --host 127.0.0.1 --port 5173 --strictPort >/tmp/vite.log 2>&1 &
-          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:5173/ >/dev/null && break; sleep 1; done
-          cat > /tmp/browser-check.mjs <<'JS'
-          import assert from 'node:assert/strict'
-          import {readFile,writeFile} from 'node:fs/promises'
-          import {execFileSync} from 'node:child_process'
-          import {chromium} from '/tmp/sandbox-browser/node_modules/playwright/index.mjs'
-          const cases=[
-           ['use-breakpoint','UseBreakpointTask','createBreakpoint','Определение текущего breakpoint'],
-           ['use-min-match-media','UseMinMatchMediaTask','useMinMatchMedia','Реализовать хук useMinMatchMedia']
-          ]
-          const compile=file=>{
-           execFileSync('pnpm',['exec','tsc','--ignoreConfig','--strict','--exactOptionalPropertyTypes','--noEmit','--skipLibCheck','--target','es2023','--module','esnext','--moduleResolution','bundler','--jsx','react-jsx',file],{stdio:'inherit'})
-           execFileSync('pnpm',['exec','tsc','-b','--force'],{stdio:'inherit'})
-           execFileSync('pnpm',['exec','eslint',file],{stdio:'inherit'})
-          }
+          npm install --prefix /tmp/review-browser playwright@1.56.1
+          /tmp/review-browser/node_modules/.bin/playwright install chromium
+          pnpm preview --host 127.0.0.1 --port 4173 --strictPort >/tmp/review-preview.log 2>&1 &
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:4173/ >/dev/null && break; sleep 1; done
+          cat > /tmp/review-smoke.mjs <<'JS'
+          import {chromium} from '/tmp/review-browser/node_modules/playwright/index.mjs'
           const browser=await chromium.launch({headless:true})
-          const originals=new Map()
-          const log=name=>console.log('BROWSER RESULT '+name+' PASS')
-          const other='Реализовать компонент с fetch'
-          const otherText='Здесь будет UI задания с загрузкой данных.'
-          const open=async(width=1100,height=800,track=true)=>{
-           const page=await browser.newPage({viewport:{width,height}})
-           if(track)await page.addInitScript(()=>{
-            const resize=new Set()
-            const media=new Map()
-            const add=EventTarget.prototype.addEventListener
-            const remove=EventTarget.prototype.removeEventListener
-            const relevant=(target,type)=>target===window&&type==='resize'?resize:
-             target instanceof MediaQueryList&&type==='change'?(media.get(target)??(media.set(target,new Set()),media.get(target))):null
-            EventTarget.prototype.addEventListener=function(type,listener,options){
-             relevant(this,type)?.add(listener)
-             return add.call(this,type,listener,options)
+          try {
+            const page=await browser.newPage()
+            await page.goto('http://127.0.0.1:4173/')
+            const nav=page.getByRole('navigation',{name:'Список заданий'})
+            const content=page.locator('.task-content')
+            for(const title of ['Рефакторинг 7: Переключатель с memo-кнопкой','Рефакторинг 41: Две кнопки: счётчик и имя']){
+              await nav.getByRole('button',{name:title,exact:true}).click()
+              await content.getByText('Открой task.md и рабочий файл в редакторе. Для этого упражнения запуск в браузере не требуется.',{exact:true}).waitFor()
+              console.log('CATALOG TEXT-ONLY PASS '+title)
             }
-            EventTarget.prototype.removeEventListener=function(type,listener,options){
-             relevant(this,type)?.delete(listener)
-             return remove.call(this,type,listener,options)
-            }
-            window.__viewportSubs=()=>({resize:resize.size,media:[...media].flatMap(([target,listeners])=>[...listeners].map(()=>target.media)).sort()})
-           })
-           await page.goto('http://127.0.0.1:5173')
-           const nav=page.getByRole('navigation',{name:'Список заданий'})
-           const content=page.locator('.task-content')
-           const select=async name=>nav.getByRole('button',{name,exact:true}).click()
-           const show=async text=>content.getByText(text,{exact:true}).waitFor({timeout:15000})
-           await select(other)
-           await show(otherText)
-           const baseline=track?await page.evaluate(()=>window.__viewportSubs()):null
-           const waitSubs=async(resize,media=[])=>{
-            const expected={resize:baseline.resize+resize,media:[...baseline.media,...media].sort()}
-            await page.waitForFunction(expected=>JSON.stringify(window.__viewportSubs())===JSON.stringify(expected),expected,{timeout:5000})
-           }
-           const frames=()=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))))
-           const size=async(width,height)=>{await page.setViewportSize({width,height});await frames()}
-           const leave=async()=>{await select(other);await show(otherText);await waitSubs(0)}
-           return {page,content,select,show,waitSubs,size,leave,frames}
-          }
-          try{
-           for(const [id,comp,hook,title] of cases){
-            const file='src/tasks/hooks/'+id+'/'+comp+'.tsx'
-            const old=await readFile(file,'utf8')
-            originals.set(file,old)
-            let source
-            if(hook==='createBreakpoint'){
-             const solution=[
-              "  const sorted=(Object.entries(breakpoints) as [BreakpointName<T>,number][]).sort((a,b)=>b[1]-a[1])",
-              "  const subscribe=(notify:()=>void)=>{window.addEventListener('resize',notify);return ()=>window.removeEventListener('resize',notify)}",
-              "  const getSnapshot=()=>sorted.find(([,min])=>window.innerWidth>=min)![0]",
-              "  return function useBreakpoint(): BreakpointName<T> {",
-              "    return useSyncExternalStore(subscribe,getSnapshot)",
-              "  }"
-             ].join('\n')
-             source='import {useSyncExternalStore} from "react"\n'+old.replace(/  \/\/ Реализуй фабрику и возвращаемый ею хук\.\n  void breakpoints\n\n  return function useBreakpoint\(\): BreakpointName<T> \{\n    throw new Error\('[^']+'\)\n  \}/,solution)
-            }else{
-             const solution=[
-              "  const query='(min-width: '+mediaParams.width+'px) and (min-height: '+mediaParams.height+'px)'",
-              "  const latest=useRef(callback)",
-              "  useLayoutEffect(()=>{latest.current=callback},[callback])",
-              "  const subscribe=useCallback((notify:()=>void)=>{",
-              "    const media=window.matchMedia(query)",
-              "    const change=()=>{notify();latest.current?.()}",
-              "    media.addEventListener('change',change)",
-              "    return ()=>media.removeEventListener('change',change)",
-              "  },[query])",
-              "  return useSyncExternalStore(subscribe,()=>window.matchMedia(query).matches)"
-             ].join('\n')
-             source='import {useCallback,useLayoutEffect,useRef,useSyncExternalStore} from "react"\n'+old.replace(/  \/\/ Замени обе строки реализацией\.\n  void [^\n]+\n  throw new Error\('[^']+'\)/,solution)
-            }
-            assert.ok(!source.includes("throw new Error('Реализуй"))
-            const smoke=await open(1100,800,false)
-            await smoke.select(title)
-            await smoke.show('Реализуй '+hook)
-            await writeFile(file,source)
-            await smoke.show(hook==='createBreakpoint'?'Desktop':'Результат: true')
-            await smoke.page.close()
-            log(id+' HMR recovery')
-            compile(file)
-            if(hook==='createBreakpoint'){
-             const typeChecks=[
-              '',
-              'function verifyBreakpointTypes() {',
-              '  const useCustom = createBreakpoint({compact: 0, cinema: 1440})',
-              '  type Result = ReturnType<typeof useCustom>',
-              "  const compact: Result = 'compact'",
-              "  const cinema: Result = 'cinema'",
-              "  const exact: [Result] extends ['compact' | 'cinema'] ? true : false = true",
-              '  // @ts-expect-error unrelated names are not valid results',
-              "  const invalid: Result = 'mobile'",
-              '  // @ts-expect-error thresholds must be numbers',
-              "  const invalidConfig = createBreakpoint({small: 0, large: '1440'})",
-              '  void [useCustom, compact, cinema, exact, invalid, invalidConfig]',
-              '}',
-              'void verifyBreakpointTypes',
-              ''
-             ].join('\n')
-             await writeFile(file,source+typeChecks)
-             compile(file)
-             await writeFile(file,source)
-             log(id+' exact inferred generic union and invalid type rejection')
-             const verify=async()=>{
-              const t=await open(767,800)
-              await t.select(title)
-              await t.show('Mobile')
-              await t.waitSubs(1)
-              for(const [width,label] of [[768,'Tablet'],[1023,'Tablet'],[1024,'Desktop'],[1400,'Desktop'],[1023,'Tablet'],[767,'Mobile']]){
-               await t.size(width,800)
-               await t.show(label)
-               await t.waitSubs(1)
-              }
-              await t.leave()
-              await t.page.close()
-             }
-             await verify()
-             const unordered=source.replace('  mobile: 0,\n  tablet: 768,\n  desktop: 1024,','  desktop: 1024,\n  mobile: 0,\n  tablet: 768,')
-             assert.notEqual(source,unordered)
-             await writeFile(file,unordered)
-             compile(file)
-             await verify()
-             log(id+' initial snapshot, exact boundaries, unordered thresholds and resize cleanup')
-            }else{
-             const query='(min-width: 1024px) and (min-height: 768px)'
-             const query2='(min-width: 1200px) and (min-height: 768px)'
-             const check=async(t,value,n)=>{
-              await t.show('Результат: '+value)
-              await t.show('Пересечений границы: '+n)
-              await t.frames()
-              assert.equal(await t.content.getByText('Пересечений границы: '+n,{exact:true}).count(),1)
-             }
-             const t=await open(1024,768)
-             await t.select(title)
-             await t.waitSubs(0,[query])
-             await check(t,true,0)
-             for(const [w,h,value,n] of [[1023,768,false,1],[1100,767,false,1],[1100,800,true,2],[1200,900,true,2],[1200,767,false,3],[1024,768,true,4]]){
-              await t.size(w,h)
-              await check(t,value,n)
-              await t.waitSubs(0,[query])
-             }
-             await t.leave()
-             await t.page.close()
-             const initialFalse=await open(1023,768)
-             await initialFalse.select(title)
-             await initialFalse.waitSubs(0,[query])
-             await check(initialFalse,false,0)
-             await initialFalse.leave()
-             await initialFalse.page.close()
-             const dynamic=source.replace('  const [changes, setChanges] = useState(0)','  const [changes, setChanges] = useState(0)\n  const [minWidth,setMinWidth]=useState(1024)')
-              .replace('useMinMatchMedia({width: 1024, height: 768}, () => {\n    setChanges(count => count + 1)','useMinMatchMedia({width: minWidth, height: 768}, () => {\n    setChanges(changes + 1)')
-              .replace('<p>Минимальный размер: 1024 × 768</p>','<p>Минимальный размер: {minWidth} × 768</p>\n      <button type="button" onClick={()=>setMinWidth(w=>w===1024?1200:1024)}>Change threshold</button>')
-             assert.notEqual(source,dynamic)
-             await writeFile(file,dynamic)
-             compile(file)
-             const d=await open(1100,800)
-             await d.select(title)
-             await d.waitSubs(0,[query])
-             await check(d,true,0)
-             await d.content.getByRole('button',{name:'Change threshold'}).click()
-             await d.waitSubs(0,[query2])
-             await check(d,false,0)
-             await d.size(1250,800)
-             await check(d,true,1)
-             await d.size(1100,800)
-             await check(d,false,2)
-             await d.content.getByRole('button',{name:'Change threshold'}).click()
-             await d.waitSubs(0,[query])
-             await check(d,true,2)
-             await d.leave()
-             await d.page.close()
-             const optional=source.replace('  const [changes, setChanges] = useState(0)\n','')
-              .replace("import {useState} from 'react'\n",'')
-              .replace('useMinMatchMedia({width: 1024, height: 768}, () => {\n    setChanges(count => count + 1)\n  })','useMinMatchMedia({width: 1024, height: 768})')
-              .replace('      <p>Пересечений границы: {changes}</p>\n','')
-             assert.notEqual(source,optional)
-             await writeFile(file,optional)
-             compile(file)
-             const o=await open(1024,768)
-             await o.select(title)
-             await o.show('Результат: true')
-             await o.waitSubs(0,[query])
-             await o.size(1023,768)
-             await o.show('Результат: false')
-             await o.leave()
-             await o.page.close()
-             log(id+' both dimensions, crossings only, initial silence, latest callback, changed query, optional callback and cleanup')
-            }
-            await writeFile(file,old)
-            const r=await open()
-            await r.select(title)
-            await r.show('Реализуй '+hook)
-            await r.leave()
-            await r.page.close()
-            log(id+' restored starter and isolated error')
-           }
-          }finally{
-           for(const [file,source] of originals)await writeFile(file,source)
-           await browser.close()
-          }
+            await nav.getByRole('button',{name:'Реализовать компонент с fetch',exact:true}).click()
+            await content.getByText('Здесь будет UI задания с загрузкой данных.',{exact:true}).waitFor()
+            console.log('Existing browser task PASS')
+          }finally{await browser.close()}
           JS
-          node /tmp/browser-check.mjs
-      - name: Verify restored files
+          node /tmp/review-smoke.mjs
+      - name: Verify no tracked modifications
         if: always()
-        run: |
-          git diff --exit-code
-          cat /tmp/vite.log || true
+        run: git diff --exit-code
