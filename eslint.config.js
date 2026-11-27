@@ -6,7 +6,14 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores([
+    'dist',
+    // These standalone interview snippets deliberately retain original errors.
+    'src/tasks/review/refactor-07-memo-toggle/Refactor07Task.tsx',
+    'src/tasks/review/refactor-07-memo-toggle/starter/Refactor07Task.tsx',
+    'src/tasks/review/refactor-41-state-mutation/Refactor41Task.tsx',
+    'src/tasks/review/refactor-41-state-mutation/starter/Refactor41Task.tsx',
+  ]),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

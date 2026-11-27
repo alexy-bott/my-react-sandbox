@@ -55,7 +55,6 @@ import {Refactor03Task} from './review/refactor-03-redux-todos/active'
 import {Refactor04Task} from './review/refactor-04-cart-scroll/active'
 import {Refactor05Task} from './review/refactor-05-list-mutation/active'
 import {Refactor06Task} from './review/refactor-06-numbers-render/active'
-import {Refactor07Task} from './review/refactor-07-memo-toggle/active'
 import {Refactor08Task} from './review/refactor-08-window-event/active'
 import {Refactor09Task} from './review/refactor-09-class-event/active'
 import {Refactor10Task} from './review/refactor-10-lazy-init/active'
@@ -599,7 +598,6 @@ export const tasks: Task[] = [
   {
     id: 'refactor-07-memo-toggle',
     title: 'Рефакторинг 07: Переключатель с memo-кнопкой',
-    component: Refactor07Task,
     category: 'review',
   },
   {
@@ -773,9 +771,6 @@ export const tasks: Task[] = [
   {
     id: 'refactor-41-state-mutation',
     title: 'Рефакторинг 41: Две кнопки: счётчик и имя',
-    component: lazy(() =>
-      import('./review/refactor-41-state-mutation/Refactor41Task').then(module => ({default: module.App})),
-    ),
     category: 'review',
   },
   {

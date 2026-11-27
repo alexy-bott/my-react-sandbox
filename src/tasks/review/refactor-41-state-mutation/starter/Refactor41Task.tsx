@@ -1,9 +1,7 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 export function App() {
   const [count, setCount] = useState(0);
   const [count2, setCount2] = useState({ name: 'Anton' });
-  // Техническая строка для проверки типов: не меняет поведение примера.
-  void setCount2;
   const handleBtnClick2 = () => { count2.name = 'Alex'; };
   const btnClick = () => { setCount(count + 1); };
   const handleBtnClick = useCallback(() => { btnClick(); }, []);

@@ -1,10 +1,9 @@
-import source from './source.txt?raw'
-
-export function Refactor07Task() {
-  return (
-    <div className="task-card">
-      <p className="task-note">Исходник для ревью. Условие — в task.md; замечания — в attempts/current/review.md.</p>
-      <pre style={{whiteSpace: 'pre-wrap'}}><code>{source}</code></pre>
-    </div>
-  )
+const Button = memo(function Button({onClick}: {onClick: React.MouseEventHandler}) {
+  console.log('render');
+  return <button onclick={onClick}>Click me</button>
+}
+export default function App(){
+  const [isVisible, setIsVisible] = useState(false)
+  const onClick = useCallback(() => { setIsVisible(!isVisible) }, [])
+  return <><Button onClick={onClick}/>{isVisible && (<div>lorem ipsum</div>)}</>
 }
