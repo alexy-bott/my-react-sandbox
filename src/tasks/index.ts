@@ -42,7 +42,6 @@ import {UseIsMountedSafeStateTask} from './hooks/use-is-mounted-safe-state/activ
 import {UseKeyPressTask} from './hooks/use-key-press/active'
 import {UseMutationObserverTask} from './hooks/use-mutation-observer/active'
 import {UseQueryParamsStateTask} from './hooks/use-query-params-state/active'
-import {UserSearchCodeReviewTask} from './review/user-search-code-review/active'
 import {UseMinMatchMediaTask} from './hooks/use-min-match-media/active'
 import {UsersPageProductionReviewTask} from './review/users-page-production-review/active'
 import {MultistepRegistrationFormTask} from './components/multistep-registration-form/active'
@@ -57,9 +56,7 @@ import {Refactor05Task} from './review/refactor-05-list-mutation/active'
 import {Refactor09Task} from './review/refactor-09-class-event/active'
 import {Refactor10Task} from './review/refactor-10-lazy-init/active'
 import {Refactor11Task} from './review/refactor-11-reverse-list/active'
-import {Refactor12Task} from './review/refactor-12-counter-variable/active'
 import {Refactor13Task} from './review/refactor-13-create-number/active'
-import {Refactor14Task} from './review/refactor-14-even-child/active'
 import {Refactor15Task} from './review/refactor-15-click-listener/active'
 import {Refactor17Task} from './review/refactor-17-click-intervals/active'
 import {Refactor18Task} from './review/refactor-18-counter-reset/active'
@@ -75,7 +72,6 @@ import {Refactor29Task} from './review/refactor-29-random-request-error/active'
 import {Refactor30Task} from './review/refactor-30-infinite-scroll/active'
 import {Refactor31Task} from './review/refactor-31-number-and-scroll/active'
 import {Refactor32Task} from './review/refactor-32-user-profile/active'
-import {Refactor34Task} from './review/refactor-34-interval-no-deps/active'
 import {Refactor35Task} from './review/refactor-35-count-display/active'
 import {Refactor37Task} from './review/refactor-37-heavy-send/active'
 import {Refactor39Task} from './review/refactor-39-timer-controls/active'
@@ -500,7 +496,6 @@ export const tasks: Task[] = [
   {
     id: 'user-search-code-review',
     title: 'Ревью компонента UserSearch',
-    component: UserSearchCodeReviewTask,
     category: 'review',
   },
   {
@@ -622,7 +617,6 @@ export const tasks: Task[] = [
   {
     id: 'refactor-12-counter-variable',
     title: 'Рефакторинг 12: Счётчик в локальной переменной',
-    component: Refactor12Task,
     category: 'review',
   },
   {
@@ -634,7 +628,6 @@ export const tasks: Task[] = [
   {
     id: 'refactor-14-even-child',
     title: 'Рефакторинг 14: Ререндер SubElement только при чётном count',
-    component: Refactor14Task,
     category: 'review',
   },
   {
@@ -730,7 +723,6 @@ export const tasks: Task[] = [
   {
     id: 'refactor-34-interval-no-deps',
     title: 'Рефакторинг 34: Счётчик: исправление без зависимостей эффекта',
-    component: Refactor34Task,
     category: 'review',
   },
   {

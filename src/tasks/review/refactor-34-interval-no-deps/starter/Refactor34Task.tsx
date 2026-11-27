@@ -1,10 +1,13 @@
-import source from './source.txt?raw'
-
-export function Refactor34Task() {
-  return (
-    <div className="task-card">
-      <p className="task-note">Исходник для ревью. Условие — в task.md; замечания — в attempts/current/review.md.</p>
-      <pre style={{whiteSpace: 'pre-wrap'}}><code>{source}</code></pre>
-    </div>
-  )
-}
+import React, { useState, useEffect } from 'react';
+const Counter = () => {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      console.log(count);
+      setCount(count + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+  return <div>Count: {count}</div>;
+};
+export default Counter;
